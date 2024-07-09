@@ -15,10 +15,10 @@ extern "C" {
 
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 0
-#define VERSION_PATCH 1
+#define VERSION_PATCH 2
 
 #if defined(DEBUG)
-#define VERSION_BUILD 2
+#define VERSION_BUILD 1
 #define VERSION_STRING "v"QUOTE_CMD(VERSION_MAJOR)"."QUOTE_CMD(VERSION_MINOR)"."QUOTE_CMD(VERSION_PATCH)"-rc."QUOTE_CMD(VERSION_BUILD)
 #else
 #define VERSION_STRING "v"QUOTE_CMD(VERSION_MAJOR)"."QUOTE_CMD(VERSION_MINOR)"."QUOTE_CMD(VERSION_PATCH)
@@ -97,7 +97,7 @@ typedef struct context_rtc_s {
         .RTC_day = 0,                  \
         .RTC_hour = 0,                 \
         .RTC_min = 0,                  \
-        .RTC_calibration_speed = 3.6/1000,    \
+        .RTC_calibration_speed = 0.0036,    \
         .RTC_distance = 0,             \
         .RTC_avg_10s = 0,              \
         .RTC_max_2s = 0,               \
@@ -140,7 +140,6 @@ typedef struct context_s {
     bool request_restart;
     bool firmware_update_started;
     bool deep_sleep;
-    bool long_push;
     bool logs_enabled;
 
     uint8_t button;
@@ -168,17 +167,6 @@ typedef struct context_s {
     int low_bat_count;
     uint32_t freeSpace;
 
-
-#ifdef CONFIG_BUTTON_OLD_BEHAIVIOR
-    struct Button_push
-        Short_push12;  // (12,100,15,1); //GPIO12 pull up, 100ms push time, 15s
-                       // long_pulse, count 1, STAT screen 4&5
-    struct Button_push
-        Long_push12;                  // (12,2000,10,4); //GPIO12 pull up, 2000ms push time, 10s
-                                      // long_pulse, count 4, reset STAT screen 4&5
-    struct Button_push Short_push39;  // (WAKE_UP_GPIO,100,10,8);//was 39
-    struct Button_push Long_push39;   // (WAKE_UP_GPIO,1500,10,8);//was 39
-#endif
     char SW_version[16];
 
     const char *filename;
@@ -204,7 +192,6 @@ typedef struct context_s {
         .request_restart = false, \
         .firmware_update_started = false, \
         .deep_sleep = false,     \
-        .long_push = false,      \
         .logs_enabled = false,   \
         .button = 0,             \
         .reed = 0,               \

@@ -10,7 +10,6 @@
 
 #include "context.h"
 #include "logger_config.h"
-//#include "logger_common.h"
 #include "ubx.h"
 
 #ifndef CONFIG_SOC_RTC_FAST_MEM_SUPPORTED
@@ -48,7 +47,7 @@ int read_rtc(context_rtc_t *rtc) {
     if (err != 1024)
         err = nvs_get_blob(my_handle, "RTC_calibration_speed", NULL, &tlen);
     if (err)
-        rtc->RTC_calibration_speed = 3.6 / 1000;
+        rtc->RTC_calibration_speed = 0.0036;
     else {
         err = nvs_get_blob(my_handle, "RTC_calibration_speed", tmp, &tlen);
         rtc->RTC_calibration_speed = atof(tmp);
@@ -323,7 +322,7 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
 #ifdef USE_CUSTOM_CALIBRATION_VAL
     rtc->RTC_calibration_bat = config->cal_bat <= 1.4 ? config->cal_bat : 1;
 #endif
-    rtc->RTC_calibration_speed = config->cal_speed / 1000;  // 3.6=km/h, 1.94384449 = knots, speed is now in mm/s
+    rtc->RTC_calibration_speed = config->speed_unit == 1 ? 0.0036 : config->speed_unit == 2 ? 0.00194384449 : 0.001;  // 1=m/s, 3.6=km/h, 1.94384449 = knots, speed is now in mm/s
     rtc->RTC_SLEEP_screen = config->sleep_off_screen % 10;
     rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
