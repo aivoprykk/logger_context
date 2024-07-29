@@ -336,8 +336,9 @@ void g_context_ubx_add_config(context_t *ctx, ubx_config_t *config) {
     assert(ctx->gps.ublox_config);
     ctx->gps.ublox_config->rtc_conf->output_rate = ctx->config->sample_rate;
     ctx->gps.ublox_config->rtc_conf->nav_mode = ctx->config->dynamic_model;
-    ctx->gps.ublox_config->rtc_conf->msgout_sat = ctx->config->log_ubx_nav_sat;
-    ctx->gps.ublox_config->rtc_conf->gnss = ctx->config->gnss;
+    // ctx->gps.ublox_config->rtc_conf->msgout_sat = ctx->config->log_ubx_nav_sat;
+    if(ctx->config->gnss > 5)
+        ctx->gps.ublox_config->rtc_conf->gnss = ctx->config->gnss;
 }
 
 context_t *g_context_init(context_t *ctx) {
