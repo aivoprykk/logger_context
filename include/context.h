@@ -139,7 +139,6 @@ typedef struct context_s {
     
     bool request_restart;
     bool firmware_update_started;
-    bool deep_sleep;
     bool logs_enabled;
 
     uint8_t button;
@@ -149,7 +148,6 @@ typedef struct context_s {
 
     uint8_t stat_screen_count;
     uint8_t gpio12_screen_count;
-    uint8_t boot_screen_stage;
     uint8_t stat_screen_cur;    // keuze stat scherm indien stilstand
     
     uint8_t gpio12_screen_cur;  // keuze welk scherm
@@ -191,7 +189,6 @@ typedef struct context_s {
         .context_initialized = false, \
         .request_restart = false, \
         .firmware_update_started = false, \
-        .deep_sleep = false,     \
         .logs_enabled = false,   \
         .button = 0,             \
         .reed = 0,               \
@@ -199,7 +196,6 @@ typedef struct context_s {
         .Field_choice2 = 0,      \
         .stat_screen_count = 0,  \
         .gpio12_screen_count = 0, \
-        .boot_screen_stage = 0,  \
         .stat_screen_cur = 0,    \
         .gpio12_screen_cur = 0,  \
         .stat_screen = {0},      \
