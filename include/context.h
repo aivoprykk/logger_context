@@ -153,8 +153,8 @@ typedef struct context_s {
     uint8_t gpio12_screen_cur;  // keuze welk scherm
     uint8_t _pad1;
     
-    uint8_t stat_screen[12];    // which stat_screen you want to see ?
-    uint8_t gpio12_screen[12];  // which stat_screen when gpio 12 toggles ?  
+    uint8_t stat_screen[16];    // which stat_screen you want to see ?
+    uint8_t gpio12_screen[16];  // which stat_screen when gpio 12 toggles ?  
 
     uint8_t mac_address[6];     // unique mac adress of esp32
     io_but_status_t io_button_status[4];

@@ -397,39 +397,24 @@ context_t *g_context_add_config(context_t *ctx, logger_config_t *config) {
         ctx->config = config;
     }
     ctx->gps.time_out_gps_msg = (1000 / ctx->gps.ublox_config->rtc_conf->output_rate + 75);  // max time out = 175 ms
-    uint32_t screen;                     // preserve value config
+    uint16_t screen;                     // preserve value config
     uint8_t screen_count, i, j;
     
     screen = config->stat_screens;
-    ctx->stat_screen_count = screen_count = lenHelper(screen);
-    if(screen == 0) {
-        ctx->stat_screen[0] = 1;
-    } else {
-        for (i = screen_count; i>0; --i) {
-            j = screen % 10;
-            if(j>0){
-                ESP_LOGW(TAG, "[%s], stat screen: %"PRIu8" in pos %"PRIu8, __FUNCTION__, j, i-1);
-                ctx->stat_screen[i-1] = j;
-                screen = screen / 10;
-            }
-        }
+    if(screen>=UINT16_MAX) screen = UINT16_MAX;
+    for (i = 0, ctx->stat_screen_count=0; i<16; ++i) {
+            ctx->stat_screen[i] =  screen & (1 << i) ? 1 : 0;
+            if(ctx->stat_screen[i]) ctx->stat_screen_count++;
     }
-    ESP_LOGW(TAG, "[%s], stat screens: count %"PRIu8", screens %"PRIu32, __FUNCTION__, ctx->stat_screen_count, config->stat_screens);
+    ESP_LOGW(TAG, "[%s], stat screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->stat_screen_count, config->stat_screens);
 
     screen = config->gpio12_screens; 
-    ctx->gpio12_screen_count = screen_count = lenHelper(screen);
-    if(screen == 0) {
-        ctx->gpio12_screen[0] = 1;
-    } else {
-        for (i = screen_count; i>0; --i) {
-            j = screen % 10;
-            if(j>0){
-                ctx->gpio12_screen[i-1] = j;
-                screen = screen / 10;
-            }
-        }
+    if(screen>=UINT8_MAX) screen = UINT8_MAX;
+    for (i = 0,ctx->gpio12_screen_count=0; i<16; ++i) {
+            ctx->gpio12_screen[i] =  screen & (1 << i) ? 1 : 0;
+            if(ctx->gpio12_screen[i]) ctx->gpio12_screen_count++;
     }
-    ESP_LOGW(TAG, "[%s], io12 screens: count %"PRIu8", screens %"PRIu32, __FUNCTION__, ctx->gpio12_screen_count, config->gpio12_screens);
+    ESP_LOGW(TAG, "[%s], io12 screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->gpio12_screen_count, config->gpio12_screens);
 
     ctx->config = config;
     return ctx;
