@@ -39,8 +39,8 @@ typedef struct context_rtc_s {
 
     uint8_t RTC_Board_Logo;
     uint8_t RTC_Sail_Logo;
-    uint8_t RTC_SLEEP_screen;
-    uint8_t RTC_OFF_screen;
+    // uint8_t RTC_SLEEP_screen;
+    // uint8_t RTC_OFF_screen;
 
     uint8_t RTC_counter;
 
@@ -88,8 +88,6 @@ typedef struct context_rtc_s {
         .version = 1,                 \
         .RTC_Board_Logo = 1,           \
         .RTC_Sail_Logo = 1,            \
-        .RTC_SLEEP_screen = 11 % 10,         \
-        .RTC_OFF_screen = 11 / 10 % 10,           \
         .RTC_counter = 0,              \
         .RTC_offset = 0,               \
         .RTC_year = 0,                 \
@@ -138,6 +136,7 @@ typedef struct context_s {
     bool context_initialized;
     
     bool request_restart;
+    bool request_shutdown;
     bool firmware_update_started;
     bool logs_enabled;
 
@@ -188,6 +187,7 @@ typedef struct context_s {
         .downloading_file = false, \
         .context_initialized = false, \
         .request_restart = false, \
+        .request_shutdown = false, \
         .firmware_update_started = false, \
         .logs_enabled = false,   \
         .button = 0,             \

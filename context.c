@@ -84,16 +84,16 @@ int read_rtc(context_rtc_t *rtc) {
         err = nvs_get_u8(my_handle, "RTC_Sail_Logo", &rtc->RTC_Sail_Logo);
     if (err)
         rtc->RTC_Sail_Logo = 1;  // copy to RTC memory !!
-    if (err != 1024)
-        err = nvs_get_u8(my_handle, "RTC_SLEEP_screen", &rtc->RTC_SLEEP_screen);
-    if (err)
-        rtc->RTC_SLEEP_screen = 11 % 10;
-    if (err != 1024)
-        err = nvs_get_u8(my_handle, "RTC_OFF_screen", &rtc->RTC_OFF_screen);
-    if (err)
-        rtc->RTC_OFF_screen = 11 / 10 % 10;
-    if (err != 1024)
-        err = nvs_get_i16(my_handle, "RTC_offset", &rtc->RTC_offset);
+    // if (err != 1024)
+    //     err = nvs_get_u8(my_handle, "RTC_SLEEP_screen", &rtc->RTC_SLEEP_screen);
+    // if (err)
+    //     rtc->RTC_SLEEP_screen = 11 % 10;
+    // if (err != 1024)
+    //     err = nvs_get_u8(my_handle, "RTC_OFF_screen", &rtc->RTC_OFF_screen);
+    // if (err)
+    //     rtc->RTC_OFF_screen = 11 / 10 % 10;
+    // if (err != 1024)
+    //     err = nvs_get_i16(my_handle, "RTC_offset", &rtc->RTC_offset);
     if (err)
         rtc->RTC_offset = 0;
 
@@ -243,8 +243,8 @@ int write_rtc(context_rtc_t *rtc) {
 
         err = nvs_set_u8(my_handle, "RTC_Board_Logo", rtc->RTC_Board_Logo);
         err = nvs_set_u8(my_handle, "RTC_Sail_Logo", rtc->RTC_Sail_Logo);
-        err = nvs_set_u8(my_handle, "RTC_SLEEP_screen", rtc->RTC_SLEEP_screen);
-        err = nvs_set_u8(my_handle, "RTC_OFF_screen", rtc->RTC_OFF_screen);
+        // err = nvs_set_u8(my_handle, "RTC_SLEEP_screen", rtc->RTC_SLEEP_screen);
+        // err = nvs_set_u8(my_handle, "RTC_OFF_screen", rtc->RTC_OFF_screen);
 
         err = nvs_set_i16(my_handle, "RTC_offset", rtc->RTC_offset);
 
@@ -323,8 +323,8 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
     rtc->RTC_calibration_bat = config->cal_bat <= 1.4 ? config->cal_bat : 1;
 #endif
     rtc->RTC_calibration_speed = config->speed_unit == 1 ? 0.0036 : config->speed_unit == 2 ? 0.00194384449 : 0.001;  // 1=m/s, 3.6=km/h, 1.94384449 = knots, speed is now in mm/s
-    rtc->RTC_SLEEP_screen = config->sleep_off_screen % 10;
-    rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
+    // rtc->RTC_SLEEP_screen = config->sleep_off_screen % 10;
+    // rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
     write_rtc(rtc);
 }
