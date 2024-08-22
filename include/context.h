@@ -81,6 +81,7 @@ typedef struct context_rtc_s {
     // float _pad3;
 
     char RTC_Sleep_txt[32];
+    int RTC_screen_rotation;
 } context_rtc_t;
 
 #define CONTEXT_RTC_DEFAULT_CONFIG() \
@@ -110,6 +111,7 @@ typedef struct context_rtc_s {
         .RTC_R5_10s = 0,               \
         .RTC_voltage_bat = 3.6,          \
         .RTC_Sleep_txt = "Your ID",          \
+        .RTC_screen_rotation = 1,      \
     }
 
 context_rtc_t *g_context_rtc_init(context_rtc_t *rtc);

@@ -317,15 +317,16 @@ int write_rtc(context_rtc_t *rtc) {
 
 void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
     assert(rtc && config);
-    rtc->RTC_Board_Logo = config->board_Logo;  // copy RTC memory !!
-    rtc->RTC_Sail_Logo = config->sail_Logo;    // copy to RTC memory !!
+    rtc->RTC_Board_Logo = config->screen.board_logo;  // copy RTC memory !!
+    rtc->RTC_Sail_Logo = config->screen.sail_logo;    // copy to RTC memory !!
 #ifdef USE_CUSTOM_CALIBRATION_VAL
     rtc->RTC_calibration_bat = config->cal_bat <= 1.4 ? config->cal_bat : 1;
 #endif
-    rtc->RTC_calibration_speed = config->speed_unit == 1 ? 0.0036 : config->speed_unit == 2 ? 0.00194384449 : 0.001;  // 1=m/s, 3.6=km/h, 1.94384449 = knots, speed is now in mm/s
+    rtc->RTC_calibration_speed = config->gps.speed_unit == 1 ? 0.0036 : config->gps.speed_unit == 2 ? 0.00194384449 : 0.001;  // 1=m/s, 3.6=km/h, 1.94384449 = knots, speed is now in mm/s
     // rtc->RTC_SLEEP_screen = config->sleep_off_screen % 10;
     // rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
+    rtc->RTC_screen_rotation = config->screen.screen_rotation;
     write_rtc(rtc);
 }
 
@@ -334,11 +335,11 @@ void g_context_ubx_add_config(context_t *ctx, ubx_config_t *config) {
     if(!ctx->gps.ublox_config)
         ctx->gps.ublox_config = config;
     assert(ctx->gps.ublox_config);
-    ctx->gps.ublox_config->rtc_conf->output_rate = ctx->config->sample_rate;
-    ctx->gps.ublox_config->rtc_conf->nav_mode = ctx->config->dynamic_model;
+    ctx->gps.ublox_config->rtc_conf->output_rate = ctx->config->gps.sample_rate;
+    ctx->gps.ublox_config->rtc_conf->nav_mode = ctx->config->gps.dynamic_model;
     // ctx->gps.ublox_config->rtc_conf->msgout_sat = ctx->config->log_ubx_nav_sat;
-    if(ctx->config->gnss > 5)
-        ctx->gps.ublox_config->rtc_conf->gnss = ctx->config->gnss;
+    if(ctx->config->gps.gnss > 5)
+        ctx->gps.ublox_config->rtc_conf->gnss = ctx->config->gps.gnss;
 }
 
 context_t *g_context_init(context_t *ctx) {
@@ -400,21 +401,21 @@ context_t *g_context_add_config(context_t *ctx, logger_config_t *config) {
     uint16_t screen;                     // preserve value config
     uint8_t screen_count, i, j;
     
-    screen = config->stat_screens;
+    screen = config->screen.stat_screens;
     if(screen>=UINT16_MAX) screen = UINT16_MAX;
     for (i = 0, ctx->stat_screen_count=0; i<16; ++i) {
             ctx->stat_screen[i] =  screen & (1 << i) ? 1 : 0;
             if(ctx->stat_screen[i]) ctx->stat_screen_count++;
     }
-    ESP_LOGW(TAG, "[%s], stat screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->stat_screen_count, config->stat_screens);
+    ESP_LOGW(TAG, "[%s], stat screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->stat_screen_count, config->screen.stat_screens);
 
-    screen = config->gpio12_screens; 
+    screen = config->screen.gpio12_screens; 
     if(screen>=UINT8_MAX) screen = UINT8_MAX;
     for (i = 0,ctx->gpio12_screen_count=0; i<16; ++i) {
             ctx->gpio12_screen[i] =  screen & (1 << i) ? 1 : 0;
             if(ctx->gpio12_screen[i]) ctx->gpio12_screen_count++;
     }
-    ESP_LOGW(TAG, "[%s], io12 screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->gpio12_screen_count, config->gpio12_screens);
+    ESP_LOGW(TAG, "[%s], io12 screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->gpio12_screen_count, config->screen.gpio12_screens);
 
     ctx->config = config;
     return ctx;
