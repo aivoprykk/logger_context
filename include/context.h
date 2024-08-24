@@ -84,6 +84,12 @@ typedef struct context_rtc_s {
     int RTC_screen_rotation;
 } context_rtc_t;
 
+#if defined(CONFIG_DISPLAY_DRIVER_ST7789)
+#define SCR_DEFAULT_ROTATION 2 // 270deg
+#else
+#define SCR_DEFAULT_ROTATION 1 // 90deg
+#endif
+
 #define CONTEXT_RTC_DEFAULT_CONFIG() \
     (context_rtc_t) {                                 \
         .version = 1,                 \
@@ -111,7 +117,7 @@ typedef struct context_rtc_s {
         .RTC_R5_10s = 0,               \
         .RTC_voltage_bat = 3.6,          \
         .RTC_Sleep_txt = "Your ID",          \
-        .RTC_screen_rotation = 1,      \
+        .RTC_screen_rotation = SCR_DEFAULT_ROTATION,      \
     }
 
 context_rtc_t *g_context_rtc_init(context_rtc_t *rtc);
