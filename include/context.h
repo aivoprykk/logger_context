@@ -16,19 +16,19 @@ extern "C" {
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 0
 #define VERSION_PATCH 4
+#define VERSION_BUILD 1
 
 #if defined(DEBUG)
-#define VERSION_BUILD 1
 #define VERSION_STRING "v"QUOTE_CMD(VERSION_MAJOR)"."QUOTE_CMD(VERSION_MINOR)"."QUOTE_CMD(VERSION_PATCH)"-rc."QUOTE_CMD(VERSION_BUILD)
 #else
 #define VERSION_STRING "v"QUOTE_CMD(VERSION_MAJOR)"."QUOTE_CMD(VERSION_MINOR)"."QUOTE_CMD(VERSION_PATCH)
+#define _vb VERSION_BUILD+1
+#undef VERSION_BUILD
+#define VERSION_BUILD _vb
+#undef _vb
 #endif
-#ifndef VERSION
-#if !defined(DEBUG)
-#define VERSION (VERSION_MAJOR * 100 + VERSION_MINOR * 10 + VERSION_PATCH)
-#else
-#define VERSION (VERSION_MAJOR * 1000 + VERSION_MINOR * 100 + VERSION_PATCH * 10 + VERSION_BUILD)
-#endif
+#ifndef LOGGER_VERSION
+#define LOGGER_VERSION (VERSION_MAJOR * 1000 + VERSION_MINOR * 100 + VERSION_PATCH * 10 + VERSION_BUILD)
 #endif
 
 struct logger_config_s;
@@ -82,12 +82,15 @@ typedef struct context_rtc_s {
 
     char RTC_Sleep_txt[32];
     int RTC_screen_rotation;
+    uint8_t RTC_screen_auto_refresh;
 } context_rtc_t;
 
 #if defined(CONFIG_DISPLAY_DRIVER_ST7789)
 #define SCR_DEFAULT_ROTATION 2 // 270deg
+#define SCR_AUTO_REFRESH 1
 #else
 #define SCR_DEFAULT_ROTATION 1 // 90deg
+#define SCR_AUTO_REFRESH 0
 #endif
 
 #define CONTEXT_RTC_DEFAULT_CONFIG() \
@@ -118,6 +121,7 @@ typedef struct context_rtc_s {
         .RTC_voltage_bat = 3.6,          \
         .RTC_Sleep_txt = "Your ID",          \
         .RTC_screen_rotation = SCR_DEFAULT_ROTATION,      \
+        .RTC_screen_auto_refresh = SCR_AUTO_REFRESH,      \
     }
 
 context_rtc_t *g_context_rtc_init(context_rtc_t *rtc);
@@ -145,7 +149,6 @@ typedef struct context_s {
     
     bool request_restart;
     bool request_shutdown;
-    bool firmware_update_started;
     bool logs_enabled;
 
     uint8_t button;
@@ -174,8 +177,6 @@ typedef struct context_s {
 
     char SW_version[16];
 
-    const char *filename;
-    const char *filename_backup;
     char config_file_path[32];
     struct logger_config_s *config;
     struct context_rtc_s *rtc;
@@ -184,6 +185,9 @@ typedef struct context_s {
     uint8_t display_bl_level;
     uint8_t display_bl_level_set;
 #endif
+    uint8_t firmware_update_started;
+    uint32_t fw_update_postponed;
+    uint8_t fw_update_is_allowed;
 } context_t;
 
 #define CONTEXT_DEFAULT_CONFIG() (context_t){ \
@@ -196,7 +200,6 @@ typedef struct context_s {
         .context_initialized = false, \
         .request_restart = false, \
         .request_shutdown = false, \
-        .firmware_update_started = false, \
         .logs_enabled = false,   \
         .button = 0,             \
         .reed = 0,               \
@@ -215,12 +218,13 @@ typedef struct context_s {
         .low_bat_count = 0,      \
         .freeSpace = 0,          \
         .SW_version = "1.0.0",   \
-        .filename = "config.txt",        \
-        .filename_backup = "config_backup.txt", \
         .config_file_path = {0}, \
         .config = NULL,          \
         .rtc = NULL,             \
         .gps = CONTEXT_GPS_DEFAULT_CONFIG, \
+        .fw_update_postponed = 0, \
+        .fw_update_is_allowed = 0, \
+        .firmware_update_started = false, \
     }
 
 context_t *g_context_init(context_t *ctx);
