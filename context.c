@@ -422,7 +422,7 @@ context_t *g_context_add_config(context_t *ctx, logger_config_t *config) {
 }
 
 uint16_t semVer() {
-    return (uint16_t) VERSION_STRING;
+    return (uint16_t) LOGGER_VERSION;
 }
 uint8_t semVerMajor() {
     return (uint8_t) VERSION_MAJOR;
@@ -445,7 +445,7 @@ uint16_t semVerStr(char * str) {
         memcpy(str, gps_logger_version, size);
         str[size]=0;
     }
-    return (uint16_t) &gps_logger_version[0];
+    return (uint16_t) LOGGER_VERSION;
 }
 
 enum ubx_hw_e g_context_get_ubx_hw(context_t *ctx) {
