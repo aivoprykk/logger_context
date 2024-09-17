@@ -437,7 +437,7 @@ uint8_t semVerBuild() {
     return (uint8_t) VERSION_TWEAK;
 }
 
-const char gps_logger_version[] = VERSION_STRING;
+const char gps_logger_version[] = PROJECT_VER;
 
 uint16_t semVerStr(char * str) {
     uint16_t size = sizeof(gps_logger_version);
