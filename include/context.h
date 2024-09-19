@@ -90,16 +90,24 @@ typedef struct context_rtc_s {
     // float _pad3;
 
     char RTC_Sleep_txt[32];
-    int RTC_screen_rotation;
+    int8_t RTC_screen_rotation;
     uint8_t RTC_screen_auto_refresh;
 } context_rtc_t;
 
 #if defined(CONFIG_DISPLAY_DRIVER_ST7789)
+#if !defined(SCR_DEFAULT_ROTATION)
 #define SCR_DEFAULT_ROTATION 2 // 270deg
+#endif
+#if !defined(SCR_AUTO_REFRESH)
 #define SCR_AUTO_REFRESH 1
+#endif
 #else
+#if !defined(SCR_DEFAULT_ROTATION)
 #define SCR_DEFAULT_ROTATION 1 // 90deg
+#endif
+#if !defined(SCR_AUTO_REFRESH)
 #define SCR_AUTO_REFRESH 0
+#endif
 #endif
 
 #define CONTEXT_RTC_DEFAULT_CONFIG() \
@@ -129,15 +137,16 @@ typedef struct context_rtc_s {
         .RTC_R5_10s = 0,               \
         .RTC_voltage_bat = 3.6,          \
         .RTC_Sleep_txt = "Your ID",          \
-        .RTC_screen_rotation = SCR_DEFAULT_ROTATION,      \
+        .RTC_screen_rotation = -1,      \
         .RTC_screen_auto_refresh = SCR_AUTO_REFRESH,      \
     }
 
 context_rtc_t *g_context_rtc_init(context_rtc_t *rtc);
 context_rtc_t *g_context_rtc_defaults(context_rtc_t *rtc);
 void g_context_rtc_add_config(context_rtc_t *rtc, struct logger_config_s *config);
-int write_rtc(struct context_rtc_s *rtc);
-int read_rtc(struct context_rtc_s *rtc);
+int write_rtc(const char *name, void *value, size_t len);
+int read_rtc(const char *name, void *value);
+int init_rtc();
 
 typedef enum {
     IO_BUT_12_STATUS=0,
@@ -226,7 +235,7 @@ typedef struct context_s {
         .wifi_ap_timeout = 0,    \
         .low_bat_count = 0,      \
         .freeSpace = 0,          \
-        .SW_version = "1.0.0",   \
+        .SW_version = PROJECT_VER,   \
         .config_file_path = {0}, \
         .config = NULL,          \
         .rtc = NULL,             \

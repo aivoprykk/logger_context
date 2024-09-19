@@ -12,9 +12,8 @@
 #include "logger_config.h"
 #include "ubx.h"
 
-#ifndef CONFIG_SOC_RTC_FAST_MEM_SUPPORTED
 #include "nvs.h"
-#endif
+#include "nvs_flash.h"
 
 //extern struct config_s * m_config;
 static const char *TAG = "context";
@@ -29,293 +28,64 @@ context_t m_context = CONTEXT_DEFAULT_CONFIG();
     return rtc;
 }; */
 
-#ifndef CONFIG_SOC_RTC_FAST_MEM_SUPPORTED
+static const char *nvs_namespace = "logger_ctx";
 
-#include "str.h"
-static const char *nvs_namespace = "storage";
+int init_rtc() {
+    LOG_INFO(TAG, "[%s]", __FUNCTION__);
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        LOG_INFO(TAG, "[%s] INIT NVS partition", __FUNCTION__);
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    } else {
+        if(m_context_rtc.RTC_screen_rotation == -1) {
+            int8_t val = -1;
+            read_rtc(config_items[cfg_screen_rotation], &val);
+            if(val > -1) {
+                m_context_rtc.RTC_screen_rotation = val;
+            }
+        }
+    }
+    return err;
+}
 
-int read_rtc(context_rtc_t *rtc) {
-    assert(rtc);
+int read_rtc(const char *name, void *value) {
+    LOG_INFO(TAG, "[%s] name: %s", __FUNCTION__, name ? name : "-");
+    if(!name) return -1;
     nvs_handle_t my_handle;
     int err = nvs_open(nvs_namespace, NVS_READONLY, &my_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
         err = 1024;
     }
-    char tmp[16];
-    size_t tlen = 16, len = 32;
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_calibration_speed", NULL, &tlen);
-    if (err)
-        rtc->RTC_calibration_speed = 0.0036;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_calibration_speed", tmp, &tlen);
-        rtc->RTC_calibration_speed = atof(tmp);
+    if (err != 1024){
+        err = nvs_get_i8(my_handle, name, (int8_t*)value);
+        nvs_close(my_handle);    
+        LOG_INFO(TAG, "[%s] get %s %d", __FUNCTION__, name, *(int8_t*)value);
     }
-    if (err != 1024)
-        err = nvs_get_str(my_handle, "RTC_Sleep_txt", &(rtc->RTC_Sleep_txt[0]),
-                          &(len));
-    if (err)
-        strcpy(rtc->RTC_Sleep_txt, "Your ID");
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_voltage_bat", 0, &tlen);
-    if (err)
-        rtc->RTC_voltage_bat = 3.6;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_voltage_bat", tmp, &tlen);
-        rtc->RTC_voltage_bat = atof(tmp);
-    }
-    // Simon
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_calibration_bat", 0, &tlen);
-    if (err)
-        rtc->RTC_calibration_bat =
-            0.99;  // was 1.75| bij ontwaken uit deepsleep
-                   // niet noodzakelijk config file lezen
-    else {
-        err = nvs_get_blob(my_handle, "RTC_calibration_bat", tmp, &tlen);
-        rtc->RTC_calibration_bat = atof(tmp);
-    }
-    if (err != 1024)
-        err = nvs_get_u8(my_handle, "RTC_Board_Logo", &rtc->RTC_Board_Logo);
-    if (err)
-        rtc->RTC_Board_Logo = 1;  // copy RTC memory !!
-    if (err != 1024)
-        err = nvs_get_u8(my_handle, "RTC_Sail_Logo", &rtc->RTC_Sail_Logo);
-    if (err)
-        rtc->RTC_Sail_Logo = 1;  // copy to RTC memory !!
-    // if (err != 1024)
-    //     err = nvs_get_u8(my_handle, "RTC_SLEEP_screen", &rtc->RTC_SLEEP_screen);
-    // if (err)
-    //     rtc->RTC_SLEEP_screen = 11 % 10;
-    // if (err != 1024)
-    //     err = nvs_get_u8(my_handle, "RTC_OFF_screen", &rtc->RTC_OFF_screen);
-    // if (err)
-    //     rtc->RTC_OFF_screen = 11 / 10 % 10;
-    // if (err != 1024)
-    //     err = nvs_get_i16(my_handle, "RTC_offset", &rtc->RTC_offset);
-    if (err)
-        rtc->RTC_offset = 0;
-
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_distance", 0, &tlen);
-    if (err)
-        rtc->RTC_distance = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_distance", tmp, &tlen);
-        rtc->RTC_distance = atof(tmp);
-    }
-
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_avg_10s", 0, &tlen);
-    if (err)
-        rtc->RTC_avg_10s = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_avg_10s", tmp, &tlen);
-        rtc->RTC_avg_10s = atof(tmp);
-    }
-
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_max_2s", 0, &tlen);
-    if (err)
-        rtc->RTC_max_2s = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_max_2s", tmp, &tlen);
-        rtc->RTC_max_2s = atof(tmp);
-    }
-    if (err != 1024)
-        err = nvs_get_i16(my_handle, "RTC_year", &rtc->RTC_year);
-    if (err)
-        rtc->RTC_year = 0;
-    if (err != 1024)
-        err = nvs_get_i16(my_handle, "RTC_month", &rtc->RTC_month);
-    if (err)
-        rtc->RTC_month = 0;
-    if (err != 1024)
-        err = nvs_get_i16(my_handle, "RTC_day", &rtc->RTC_day);
-    if (err)
-        rtc->RTC_day = 0;
-    if (err != 1024)
-        err = nvs_get_i16(my_handle, "RTC_hour", &rtc->RTC_hour);
-    if (err)
-        rtc->RTC_hour = 0;
-    if (err != 1024)
-        err = nvs_get_i16(my_handle, "RTC_min", &rtc->RTC_min);
-    if (err)
-        rtc->RTC_min = 0;
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_alp", 0, &tlen);
-    if (err)
-        rtc->RTC_alp = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_alp", tmp, &tlen);
-        rtc->RTC_alp = atof(tmp);
-    }
-
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_500m", 0, &tlen);
-    if (err)
-        rtc->RTC_500m = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_500m", tmp, &tlen);
-        rtc->RTC_500m = atof(tmp);
-    }
-
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_1h", 0, &tlen);
-    if (err)
-        rtc->RTC_1h = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_1h", tmp, &tlen);
-        rtc->RTC_1h = atof(tmp);
-    }
-
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_mile", 0, &tlen);
-    if (err)
-        rtc->RTC_mile = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_mile", tmp, &tlen);
-        rtc->RTC_mile = atof(tmp);
-    }
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_R1_10s", 0, &tlen);
-    if (err)
-        rtc->RTC_R1_10s = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_R1_10s", tmp, &tlen);
-        rtc->RTC_R1_10s = atof(tmp);
-    }
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_R2_10s", 0, &tlen);
-    if (err)
-        rtc->RTC_R2_10s = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_R2_10s", tmp, &tlen);
-        rtc->RTC_R2_10s = atof(tmp);
-    }
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_R3_10s", 0, &tlen);
-    if (err)
-        rtc->RTC_R3_10s = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_R3_10s", tmp, &tlen);
-        rtc->RTC_R3_10s = atof(tmp);
-    }
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_R4_10s", 0, &tlen);
-    if (err)
-        rtc->RTC_R4_10s = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_R4_10s", tmp, &tlen);
-        rtc->RTC_R4_10s = atof(tmp);
-    }
-    if (err != 1024)
-        err = nvs_get_blob(my_handle, "RTC_R5_10s", 0, &tlen);
-    if (err)
-        rtc->RTC_R5_10s = 0;
-    else {
-        err = nvs_get_blob(my_handle, "RTC_R5_10s", tmp, &tlen);
-        rtc->RTC_R5_10s = atof(tmp);
-    }
-    if (err != 1024)
-        nvs_close(my_handle);
-
-    return err == 1024 ? ESP_FAIL : err;
+    return err;
 }
 
-int write_rtc(context_rtc_t *rtc) {
-    assert(rtc);
+int write_rtc(const char *name, void *value, size_t len) {
+    LOG_INFO(TAG, "[%s] name: %s", __FUNCTION__, name ? name : "-");
+    if(!name) return -1;
     nvs_handle_t my_handle;
     int err = nvs_open(nvs_namespace, NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } else {
-        char tmp[16];
-        size_t tlen = 16;
-        ftoa(rtc->RTC_calibration_speed, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_calibration_speed", tmp, tlen);
-        err = nvs_set_str(my_handle, "RTC_Sleep_txt", rtc->RTC_Sleep_txt);
-        ftoa(rtc->RTC_voltage_bat, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_voltage_bat", tmp, tlen);
-        ftoa(rtc->RTC_calibration_bat, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_calibration_bat", tmp, tlen);
-
-        err = nvs_set_u8(my_handle, "RTC_Board_Logo", rtc->RTC_Board_Logo);
-        err = nvs_set_u8(my_handle, "RTC_Sail_Logo", rtc->RTC_Sail_Logo);
-        // err = nvs_set_u8(my_handle, "RTC_SLEEP_screen", rtc->RTC_SLEEP_screen);
-        // err = nvs_set_u8(my_handle, "RTC_OFF_screen", rtc->RTC_OFF_screen);
-
-        err = nvs_set_i16(my_handle, "RTC_offset", rtc->RTC_offset);
-
-        ftoa(rtc->RTC_distance, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_distance", tmp, tlen);
-        ftoa(rtc->RTC_avg_10s, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_avg_10s", tmp, tlen);
-        ftoa(rtc->RTC_max_2s, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_max_2s", tmp, tlen);
-
-        err = nvs_set_u8(my_handle, "RTC_year", rtc->RTC_year);
-        err = nvs_set_u8(my_handle, "RTC_month", rtc->RTC_month);
-        err = nvs_set_u8(my_handle, "RTC_day", rtc->RTC_day);
-        err = nvs_set_u8(my_handle, "RTC_hour", rtc->RTC_hour);
-
-        err = nvs_set_u8(my_handle, "RTC_min", rtc->RTC_min);
-        ftoa(rtc->RTC_alp, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_alp", tmp, tlen);
-        ftoa(rtc->RTC_500m, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_500m", tmp, tlen);
-        ftoa(rtc->RTC_1h, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_1h", tmp, tlen);
-        ftoa(rtc->RTC_mile, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_mile", tmp, tlen);
-        ftoa(rtc->RTC_R1_10s, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_R1_10s", tmp, tlen);
-        ftoa(rtc->RTC_R2_10s, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_R2_10s", tmp, tlen);
-        ftoa(rtc->RTC_R3_10s, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_R3_10s", tmp, tlen);
-        ftoa(rtc->RTC_R4_10s, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_R4_10s", tmp, tlen);
-        ftoa(rtc->RTC_R5_10s, &(tmp[0]), tlen);
-        err = nvs_set_blob(my_handle, "RTC_R5_10s", tmp, tlen);
-
+        LOG_INFO(TAG, "[%s] set %s %d", __FUNCTION__, name, *(int8_t*)value);
+        err = nvs_set_i8(my_handle, name, *(int8_t*)value);
         err = nvs_commit(my_handle);
         nvs_close(my_handle);
     }
     return err;
 }
 
-#else
-
-int read_rtc(context_rtc_t *rtc) {
-    assert(rtc);
-    //if (!rtc->rtc_initialized) {
-#ifdef USE_CUSTOM_CALIBRATION_VAL
-        rtc->RTC_calibration_bat = 1;//1.02  // was 1.75| bij ontwaken uit deepsleep
-                                          // niet noodzakelijk config file lezen
-#endif
-    //}
-    return 0;
-}
-
-int write_rtc(context_rtc_t *rtc) {
-    return 0;
-}
-
-#endif
-
-/* context_rtc_t *g_context_rtc_defaults(context_rtc_t *rtc) {
-    assert(rtc);
-    if (rtc->rtc_initialized)
-        return rtc;
-    g_context_rtc_init(rtc);
-    read_rtc(rtc);
-    rtc->rtc_initialized = 1;
-    return rtc;
-} */
-
 void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
+    LOG_INFO(TAG, "[%s]", __FUNCTION__);
     assert(rtc && config);
     rtc->RTC_Board_Logo = config->screen.board_logo;  // copy RTC memory !!
     rtc->RTC_Sail_Logo = config->screen.sail_logo;    // copy to RTC memory !!
@@ -326,11 +96,15 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
     // rtc->RTC_SLEEP_screen = config->sleep_off_screen % 10;
     // rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
-    rtc->RTC_screen_rotation = config->screen.screen_rotation;
-    write_rtc(rtc);
+    if(config->screen.screen_rotation != rtc->RTC_screen_rotation){
+        LOG_INFO(TAG, "[%s] screen rotation change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_rotation, config->screen.screen_rotation);
+        rtc->RTC_screen_rotation = config->screen.screen_rotation;
+        write_rtc(&(config_items[cfg_screen_rotation][0]), &rtc->RTC_screen_rotation, sizeof(rtc->RTC_screen_rotation));
+    }
 }
 
 void g_context_ubx_add_config(context_t *ctx, ubx_config_t *config) {
+    LOG_INFO(TAG, "[%s]", __FUNCTION__);
     assert(ctx);
     if(!ctx->gps.ublox_config)
         ctx->gps.ublox_config = config;

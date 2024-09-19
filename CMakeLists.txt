@@ -1,6 +1,6 @@
 ### logger_context ###
 set(REQ gps_log logger_common)
-set(PRIVREQ logger_config logger_ubx)
+set(PRIVREQ logger_config logger_ubx nvs_flash)
 set(SRCS context.c)
 SET(INCS include)
 
