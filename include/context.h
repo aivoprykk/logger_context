@@ -91,6 +91,7 @@ typedef struct context_rtc_s {
 
     char RTC_Sleep_txt[32];
     int8_t RTC_screen_rotation;
+    int8_t RTC_screen_brightness;
     uint8_t RTC_screen_auto_refresh;
 } context_rtc_t;
 
@@ -100,6 +101,9 @@ typedef struct context_rtc_s {
 #endif
 #if !defined(SCR_AUTO_REFRESH)
 #define SCR_AUTO_REFRESH 1
+#endif
+#if !defined(SCR_DEFAULT_BRIGHTNESS)
+#define SCR_DEFAULT_BRIGHTNESS 100
 #endif
 #else
 #if !defined(SCR_DEFAULT_ROTATION)
@@ -138,6 +142,7 @@ typedef struct context_rtc_s {
         .RTC_voltage_bat = 3.6,          \
         .RTC_Sleep_txt = "Your ID",          \
         .RTC_screen_rotation = -1,      \
+        .RTC_screen_brightness = -1, \
         .RTC_screen_auto_refresh = SCR_AUTO_REFRESH,      \
     }
 
@@ -199,10 +204,6 @@ typedef struct context_s {
     struct logger_config_s *config;
     struct context_rtc_s *rtc;
     struct gps_context_s gps;
-#ifdef CONFIG_DISPLAY_DRIVER_ST7789
-    uint8_t display_bl_level;
-    uint8_t display_bl_level_set;
-#endif
     uint8_t firmware_update_started;
     uint32_t fw_update_postponed;
     uint8_t fw_update_is_allowed;

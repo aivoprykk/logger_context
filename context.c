@@ -47,6 +47,15 @@ int init_rtc() {
                 m_context_rtc.RTC_screen_rotation = val;
             }
         }
+#if defined(CONFIG_DISPLAY_DRIVER_ST7789)
+        if(m_context_rtc.RTC_screen_brightness == -1) {
+            int8_t val = -1;
+            read_rtc(config_items[cfg_screen_brightness], &val);
+            if(val > -1) {
+                m_context_rtc.RTC_screen_brightness = val;
+            }
+        }
+#endif
     }
     return err;
 }
@@ -101,6 +110,13 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
         rtc->RTC_screen_rotation = config->screen.screen_rotation;
         write_rtc(&(config_items[cfg_screen_rotation][0]), &rtc->RTC_screen_rotation, sizeof(rtc->RTC_screen_rotation));
     }
+#if defined(CONFIG_DISPLAY_DRIVER_ST7789)
+    if(config->screen_brightness != rtc->RTC_screen_brightness){
+        LOG_INFO(TAG, "[%s] screen brightness change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_brightness, config->screen_brightness);
+        rtc->RTC_screen_brightness = config->screen_brightness;
+        write_rtc(&(config_items[cfg_screen_brightness][0]), &rtc->RTC_screen_brightness, sizeof(rtc->RTC_screen_brightness));
+    }
+#endif
 }
 
 void g_context_ubx_add_config(context_t *ctx, ubx_config_t *config) {
@@ -137,10 +153,6 @@ context_t *g_context_defaults(context_t *ctx) {
     ctx->gps.mac_address =  &(ctx->mac_address[0]);
     ctx->rtc = &m_context_rtc;
     semVerStr(ctx->SW_version);
-    #ifdef CONFIG_DISPLAY_DRIVER_ST7789
-    ctx->display_bl_level=90;
-    ctx->display_bl_level_set=90;
-    #endif
     ctx->context_initialized = 1;
     return ctx;
 }
