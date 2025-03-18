@@ -1,17 +1,18 @@
 #ifndef D3BE6356_4D28_4BE4_B7E0_FB5B1C241348
 #define D3BE6356_4D28_4BE4_B7E0_FB5B1C241348
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "sdkconfig.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "sdkconfig.h"
+
 #include <sys/time.h>
+#ifndef CONFIG_GPS_DATA_ENABLED
 #include "gps_data.h"
-#include "logger_common.h"
+#endif
 
 #if !defined(VERSION_MAJOR)
 #define VERSION_MAJOR 1
@@ -64,7 +65,6 @@ typedef struct context_rtc_s {
     // uint16_t _pad1; //2
     // uint32_t _pad2; //4
 
-    float RTC_calibration_speed;
     float RTC_distance;
     float RTC_avg_10s;
     float RTC_max_2s;
@@ -95,7 +95,7 @@ typedef struct context_rtc_s {
     uint8_t RTC_screen_auto_refresh;
 } context_rtc_t;
 
-#if defined(CONFIG_DISPLAY_DRIVER_ST7789)
+#if !defined(CONFIG_LCD_IS_EPD)
 #if !defined(SCR_DEFAULT_ROTATION)
 #define SCR_DEFAULT_ROTATION 2 // 270deg
 #endif
@@ -126,7 +126,6 @@ typedef struct context_rtc_s {
         .RTC_day = 0,                  \
         .RTC_hour = 0,                 \
         .RTC_min = 0,                  \
-        .RTC_calibration_speed = 0.0036,    \
         .RTC_distance = 0,             \
         .RTC_avg_10s = 0,              \
         .RTC_max_2s = 0,               \
@@ -143,14 +142,13 @@ typedef struct context_rtc_s {
         .RTC_Sleep_txt = "Your ID",          \
         .RTC_screen_rotation = -1,      \
         .RTC_screen_brightness = -1, \
-        .RTC_screen_auto_refresh = SCR_AUTO_REFRESH,      \
+        .RTC_screen_auto_refresh = SCR_AUTO_REFRESH, \
     }
 
 context_rtc_t *g_context_rtc_init(context_rtc_t *rtc);
 context_rtc_t *g_context_rtc_defaults(context_rtc_t *rtc);
 void g_context_rtc_add_config(context_rtc_t *rtc, struct logger_config_s *config);
-int write_rtc(const char *name, void *value, size_t len);
-int read_rtc(const char *name, void *value);
+int nvs_init();
 int init_rtc();
 
 typedef enum {
@@ -196,17 +194,22 @@ typedef struct context_s {
     uint64_t wifi_ap_timeout;  // 8bytes
 
     int low_bat_count;
-    uint32_t freeSpace;
 
     char SW_version[16];
 
     char config_file_path[32];
     struct logger_config_s *config;
     struct context_rtc_s *rtc;
+#ifdef CONFIG_GPS_LOG_ENABLED
     struct gps_context_s gps;
+#else
+    void gps;
+#define CONTEXT_GPS_DEFAULT_CONFIG {0}
+#endif
     uint8_t firmware_update_started;
     uint32_t fw_update_postponed;
     uint8_t fw_update_is_allowed;
+    uint8_t nvs_initialized;
 } context_t;
 
 #define CONTEXT_DEFAULT_CONFIG() (context_t){ \
@@ -235,7 +238,6 @@ typedef struct context_s {
         .last_delay = 0,         \
         .wifi_ap_timeout = 0,    \
         .low_bat_count = 0,      \
-        .freeSpace = 0,          \
         .SW_version = PROJECT_VER,   \
         .config_file_path = {0}, \
         .config = NULL,          \
@@ -244,12 +246,12 @@ typedef struct context_s {
         .fw_update_postponed = 0, \
         .fw_update_is_allowed = 0, \
         .firmware_update_started = false, \
+        .nvs_initialized = 0,    \
     }
 
 context_t *g_context_init(context_t *ctx);
 context_t *g_context_defaults(context_t *ctx);
 context_t *g_context_add_config(context_t *ctx, struct logger_config_s *);
-void g_context_ubx_add_config(context_t *ctx, struct ubx_config_s *);
 
 enum ubx_hw_e;
 enum ubx_hw_e g_context_get_ubx_hw(context_t *ctx);

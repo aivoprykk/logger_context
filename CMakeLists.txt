@@ -1,12 +1,16 @@
-### logger_context ###
-set(REQ gps_log logger_common)
-set(PRIVREQ logger_config logger_ubx nvs_flash)
 set(SRCS context.c)
 SET(INCS include)
 
 idf_component_register(
     SRCS ${SRCS}
     INCLUDE_DIRS ${INCS}
-    REQUIRES ${REQ}
-    PRIV_REQUIRES ${PRIVREQ}
+    REQUIRES logger_common
+    PRIV_REQUIRES logger_config nvs_flash
 )
+
+if(CONFIG_GPS_LOG_ENABLED)
+   target_link_libraries(${COMPONENT_LIB} PUBLIC idf::gps_log)
+endif()
+if(CONFIG_UBLOX_ENABLED)
+   target_link_libraries(${COMPONENT_LIB} PRIVATE idf::logger_ubx)
+endif()

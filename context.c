@@ -5,15 +5,23 @@
 #include "freertos/FreeRTOS.h"
 #include <freertos/task.h>
 #include <esp_sleep.h>
-#include <esp_log.h>
 #include <esp_mac.h>
-
-#include "context.h"
-#include "logger_config.h"
-#include "ubx.h"
 
 #include "nvs.h"
 #include "nvs_flash.h"
+
+#include "sdkconfig.h"
+#if defined(CONFIG_LOGGER_USE_GLOBAL_LOG_LEVEL)
+#define C_LOG_LEVEL LOGGER_GLOBAL_LOG_LEVEL
+#else
+#define C_LOG_LEVEL CONFIG_LOGGER_COMMON_LOG_LEVEL
+#endif
+#include "common_log.h"
+
+#include "logger_common.h"
+#include "context.h"
+#include "logger_config.h"
+#include "ubx.h"
 
 //extern struct config_s * m_config;
 static const char *TAG = "context";
@@ -30,41 +38,11 @@ context_t m_context = CONTEXT_DEFAULT_CONFIG();
 
 static const char *nvs_namespace = "logger_ctx";
 
-int init_rtc() {
-    LOG_INFO(TAG, "[%s]", __FUNCTION__);
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
-        LOG_INFO(TAG, "[%s] INIT NVS partition", __FUNCTION__);
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    } else {
-        if(m_context_rtc.RTC_screen_rotation == -1) {
-            int8_t val = -1;
-            read_rtc(config_items[cfg_screen_rotation], &val);
-            if(val > -1) {
-                m_context_rtc.RTC_screen_rotation = val;
-            }
-        }
-#if defined(CONFIG_DISPLAY_DRIVER_ST7789)
-        if(m_context_rtc.RTC_screen_brightness == -1) {
-            int8_t val = -1;
-            read_rtc(config_items[cfg_screen_brightness], &val);
-            if(val > -1) {
-                m_context_rtc.RTC_screen_brightness = val;
-            }
-        }
-#endif
-    }
-    return err;
-}
-
-int read_rtc(const char *name, void *value) {
+static int read_rtc_i8(const char *ns, const char *name, void *value) {
     LOG_INFO(TAG, "[%s] name: %s", __FUNCTION__, name ? name : "-");
     if(!name) return -1;
     nvs_handle_t my_handle;
-    int err = nvs_open(nvs_namespace, NVS_READONLY, &my_handle);
+    int err = nvs_open(ns, NVS_READONLY, &my_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
         err = 1024;
@@ -77,11 +55,11 @@ int read_rtc(const char *name, void *value) {
     return err;
 }
 
-int write_rtc(const char *name, void *value, size_t len) {
+static int write_rtc_i8(const char *ns, const char *name, void *value, size_t len) {
     LOG_INFO(TAG, "[%s] name: %s", __FUNCTION__, name ? name : "-");
     if(!name) return -1;
     nvs_handle_t my_handle;
-    int err = nvs_open(nvs_namespace, NVS_READWRITE, &my_handle);
+    int err = nvs_open(ns, NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } else {
@@ -89,6 +67,51 @@ int write_rtc(const char *name, void *value, size_t len) {
         err = nvs_set_i8(my_handle, name, *(int8_t*)value);
         err = nvs_commit(my_handle);
         nvs_close(my_handle);
+    }
+    return err;
+}
+
+int nvs_init() {
+    LOG_INFO(TAG, "[%s]", __FUNCTION__);
+    if(m_context.nvs_initialized) return ESP_OK;
+    int ret = ESP_OK;
+        ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ret = nvs_flash_erase();
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "esp_flash_erase failed: %s", esp_err_to_name(ret));
+        }
+        ret = nvs_flash_init();
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "esp_flash_init failed: %s", esp_err_to_name(ret));
+        }
+        m_context.nvs_initialized = true;
+    } else if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_flash_init failed: %s", esp_err_to_name(ret));
+    }
+    return ret;
+}
+
+int init_rtc() {
+    LOG_INFO(TAG, "[%s]", __FUNCTION__);
+    esp_err_t err = nvs_init();
+    if (!err) {
+        if(m_context_rtc.RTC_screen_rotation == -1) {
+            int8_t val = -1;
+            read_rtc_i8(nvs_namespace, config_items[cfg_screen_rotation], &val);
+            if(val > -1) {
+                m_context_rtc.RTC_screen_rotation = val;
+            }
+        }
+#if !defined(CONFIG_LCD_IS_EPD)
+        if(m_context_rtc.RTC_screen_brightness == -1) {
+            int8_t val = -1;
+            read_rtc_i8(nvs_namespace, config_items[cfg_screen_brightness], &val);
+            if(val > -1) {
+                m_context_rtc.RTC_screen_brightness = val;
+            }
+        }
+#endif
     }
     return err;
 }
@@ -101,36 +124,37 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
 #ifdef USE_CUSTOM_CALIBRATION_VAL
     rtc->RTC_calibration_bat = config->cal_bat <= 1.4 ? config->cal_bat : 1;
 #endif
-    rtc->RTC_calibration_speed = config->gps.speed_unit == 1 ? 0.0036 : config->gps.speed_unit == 2 ? 0.00194384449 : 0.001;  // 1=m/s, 3.6=km/h, 1.94384449 = knots, speed is now in mm/s
+    // rtc->RTC_calibration_speed = config->gps.speed_unit == 1 ? 0.0036 : config->gps.speed_unit == 2 ? 0.00194384449 : 0.001;  // 1=m/s, 3.6=km/h, 1.94384449 = knots, speed is now in mm/s
+    // m_context.gps.calibration_speed = rtc->RTC_calibration_speed;
     // rtc->RTC_SLEEP_screen = config->sleep_off_screen % 10;
     // rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
     if(config->screen.screen_rotation != rtc->RTC_screen_rotation){
         LOG_INFO(TAG, "[%s] screen rotation change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_rotation, config->screen.screen_rotation);
         rtc->RTC_screen_rotation = config->screen.screen_rotation;
-        write_rtc(&(config_items[cfg_screen_rotation][0]), &rtc->RTC_screen_rotation, sizeof(rtc->RTC_screen_rotation));
+        write_rtc_i8(nvs_namespace, &(config_items[cfg_screen_rotation][0]), &rtc->RTC_screen_rotation, sizeof(rtc->RTC_screen_rotation));
     }
-#if defined(CONFIG_DISPLAY_DRIVER_ST7789)
+#if !defined(CONFIG_LCD_IS_EPD)
     if(config->screen_brightness != rtc->RTC_screen_brightness){
         LOG_INFO(TAG, "[%s] screen brightness change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_brightness, config->screen_brightness);
         rtc->RTC_screen_brightness = config->screen_brightness;
-        write_rtc(&(config_items[cfg_screen_brightness][0]), &rtc->RTC_screen_brightness, sizeof(rtc->RTC_screen_brightness));
+        write_rtc_i8(nvs_namespace, &(config_items[cfg_screen_brightness][0]), &rtc->RTC_screen_brightness, sizeof(rtc->RTC_screen_brightness));
     }
 #endif
 }
 
-void g_context_ubx_add_config(context_t *ctx, ubx_config_t *config) {
-    LOG_INFO(TAG, "[%s]", __FUNCTION__);
-    assert(ctx);
-    if(!ctx->gps.ublox_config)
-        ctx->gps.ublox_config = config;
-    assert(ctx->gps.ublox_config);
-    ctx->gps.ublox_config->rtc_conf->output_rate = ctx->config->gps.sample_rate;
-    ctx->gps.ublox_config->rtc_conf->nav_mode = ctx->config->gps.dynamic_model;
-    // ctx->gps.ublox_config->rtc_conf->msgout_sat = ctx->config->log_ubx_nav_sat;
-    if(ctx->config->gps.gnss > 5)
-        ctx->gps.ublox_config->rtc_conf->gnss = ctx->config->gps.gnss;
-}
+// void g_context_ubx_add_config(context_t *ctx, ubx_config_t *config) {
+//     LOG_INFO(TAG, "[%s]", __FUNCTION__);
+//     assert(ctx);
+//     if(!ctx->gps.ubx_device)
+//         ctx->gps.ubx_device = config;
+//     assert(ctx->gps.ubx_device);
+//     ctx->gps.ubx_device->rtc_conf->output_rate = ctx->config->gps.sample_rate;
+//     ctx->gps.ubx_device->rtc_conf->nav_mode = ctx->config->gps.dynamic_model;
+//     // ctx->gps.ubx_device->rtc_conf->msgout_sat = ctx->config->log_ubx_nav_sat;
+//     if(ctx->config->gps.gnss > 5)
+//         ctx->gps.ubx_device->rtc_conf->gnss = ctx->config->gps.gnss;
+// }
 
 context_t *g_context_init(context_t *ctx) {
     assert(ctx);
@@ -183,7 +207,7 @@ context_t *g_context_add_config(context_t *ctx, logger_config_t *config) {
     if(!ctx->config) {
         ctx->config = config;
     }
-    ctx->gps.time_out_gps_msg = (1000 / ctx->gps.ublox_config->rtc_conf->output_rate + 75);  // max time out = 175 ms
+    ctx->gps.time_out_gps_msg = (1000 / ctx->gps.ubx_device->rtc_conf->output_rate + 75);  // max time out = 175 ms
     uint16_t screen;                     // preserve value config
     uint8_t screen_count, i, j;
     
@@ -236,5 +260,5 @@ uint16_t semVerStr(char * str) {
 
 enum ubx_hw_e g_context_get_ubx_hw(context_t *ctx) {
     assert(ctx);
-    return ctx->gps.ublox_config->rtc_conf->hw_type;
+    return ctx->gps.ubx_device->rtc_conf->hw_type;
 }
