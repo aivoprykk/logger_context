@@ -112,6 +112,9 @@ typedef struct context_rtc_s {
 #if !defined(SCR_AUTO_REFRESH)
 #define SCR_AUTO_REFRESH 0
 #endif
+#if !defined(SCR_DEFAULT_BRIGHTNESS)
+#define SCR_DEFAULT_BRIGHTNESS 0
+#endif
 #endif
 
 #define CONTEXT_RTC_DEFAULT_CONFIG() \
@@ -140,8 +143,8 @@ typedef struct context_rtc_s {
         .RTC_R5_10s = 0,               \
         .RTC_voltage_bat = 3.6,          \
         .RTC_Sleep_txt = "Your ID",          \
-        .RTC_screen_rotation = -1,      \
-        .RTC_screen_brightness = -1, \
+        .RTC_screen_rotation = SCR_DEFAULT_ROTATION,      \
+        .RTC_screen_brightness = SCR_DEFAULT_BRIGHTNESS, \
         .RTC_screen_auto_refresh = SCR_AUTO_REFRESH, \
     }
 
