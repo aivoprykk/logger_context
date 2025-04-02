@@ -56,14 +56,7 @@ typedef struct context_rtc_s {
 
     int16_t RTC_offset;
 
-    int16_t RTC_year;   // 2
-    int16_t RTC_month;  // 2
-    int16_t RTC_day;    // 2
-    int16_t RTC_hour;   // 2
-
-    int16_t RTC_min;  // 2
-    // uint16_t _pad1; //2
-    // uint32_t _pad2; //4
+    struct tm rtc_tm;
 
     float RTC_distance;
     float RTC_avg_10s;
@@ -124,11 +117,7 @@ typedef struct context_rtc_s {
         .RTC_Sail_Logo = 1,            \
         .RTC_counter = 0,              \
         .RTC_offset = 0,               \
-        .RTC_year = 0,                 \
-        .RTC_month = 0,                \
-        .RTC_day = 0,                  \
-        .RTC_hour = 0,                 \
-        .RTC_min = 0,                  \
+        .rtc_tm = {0},                \
         .RTC_distance = 0,             \
         .RTC_avg_10s = 0,              \
         .RTC_max_2s = 0,               \

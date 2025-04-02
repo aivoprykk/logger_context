@@ -49,8 +49,10 @@ static int read_rtc_i8(const char *ns, const char *name, void *value) {
     }
     if (err != 1024){
         err = nvs_get_i8(my_handle, name, (int8_t*)value);
-        nvs_close(my_handle);    
+        nvs_close(my_handle);
+#if (C_LOG_LEVEL < 2) 
         LOG_INFO(TAG, "[%s] get %s %d", __FUNCTION__, name, *(int8_t*)value);
+#endif
     }
     return err;
 }
@@ -63,7 +65,9 @@ static int write_rtc_i8(const char *ns, const char *name, void *value, size_t le
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } else {
+#if (C_LOG_LEVEL < 2)
         LOG_INFO(TAG, "[%s] set %s %d", __FUNCTION__, name, *(int8_t*)value);
+#endif
         err = nvs_set_i8(my_handle, name, *(int8_t*)value);
         err = nvs_commit(my_handle);
         nvs_close(my_handle);
@@ -130,13 +134,17 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
     // rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
     if(config->screen.screen_rotation != rtc->RTC_screen_rotation){
+#if (C_LOG_LEVEL < 2)
         LOG_INFO(TAG, "[%s] screen rotation change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_rotation, config->screen.screen_rotation);
+#endif
         rtc->RTC_screen_rotation = config->screen.screen_rotation;
         write_rtc_i8(nvs_namespace, &(config_items[cfg_screen_rotation][0]), &rtc->RTC_screen_rotation, sizeof(rtc->RTC_screen_rotation));
     }
 #if !defined(CONFIG_LCD_IS_EPD)
     if(config->screen_brightness != rtc->RTC_screen_brightness){
+    #if (C_LOG_LEVEL < 2)
         LOG_INFO(TAG, "[%s] screen brightness change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_brightness, config->screen_brightness);
+#endif
         rtc->RTC_screen_brightness = config->screen_brightness;
         write_rtc_i8(nvs_namespace, &(config_items[cfg_screen_brightness][0]), &rtc->RTC_screen_brightness, sizeof(rtc->RTC_screen_brightness));
     }
@@ -217,16 +225,18 @@ context_t *g_context_add_config(context_t *ctx, logger_config_t *config) {
             ctx->stat_screen[i] =  screen & (1 << i) ? 1 : 0;
             if(ctx->stat_screen[i]) ctx->stat_screen_count++;
     }
+#if (C_LOG_LEVEL < 2)
     ESP_LOGW(TAG, "[%s], stat screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->stat_screen_count, config->screen.stat_screens);
-
+#endif
     screen = config->screen.gpio12_screens; 
     if(screen>=UINT8_MAX) screen = UINT8_MAX;
     for (i = 0,ctx->gpio12_screen_count=0; i<16; ++i) {
             ctx->gpio12_screen[i] =  screen & (1 << i) ? 1 : 0;
             if(ctx->gpio12_screen[i]) ctx->gpio12_screen_count++;
     }
+#if (C_LOG_LEVEL < 2)
     ESP_LOGW(TAG, "[%s], io12 screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->gpio12_screen_count, config->screen.gpio12_screens);
-
+#endif
     ctx->config = config;
     return ctx;
 }
