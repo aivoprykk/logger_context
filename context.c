@@ -215,7 +215,6 @@ context_t *g_context_add_config(context_t *ctx, logger_config_t *config) {
     if(!ctx->config) {
         ctx->config = config;
     }
-    ctx->gps.time_out_gps_msg = (1000 / ctx->gps.ubx_device->rtc_conf->output_rate + 75);  // max time out = 175 ms
     uint16_t screen;                     // preserve value config
     uint8_t screen_count, i, j;
     

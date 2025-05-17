@@ -237,7 +237,7 @@ typedef struct context_s {
         .gps = CONTEXT_GPS_DEFAULT_CONFIG, \
         .fw_update_postponed = 0, \
         .fw_update_is_allowed = 0, \
-        .firmware_update_started = false, \
+        .firmware_update_started = 0, \
         .nvs_initialized = 0,    \
     }
 
