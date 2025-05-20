@@ -169,14 +169,13 @@ typedef struct context_s {
     uint8_t Field_choice;
     uint8_t Field_choice2;
 
-    uint8_t stat_screen_count;
     uint8_t gpio12_screen_count;
     uint8_t stat_screen_cur;    // keuze stat scherm indien stilstand
     
     uint8_t gpio12_screen_cur;  // keuze welk scherm
     uint8_t _pad1;
     
-    uint8_t stat_screen[16];    // which stat_screen you want to see ?
+    // uint8_t stat_screen[16];    // which stat_screen you want to see ?
     uint8_t gpio12_screen[16];  // which stat_screen when gpio 12 toggles ?  
 
     uint8_t mac_address[6];     // unique mac adress of esp32
@@ -219,11 +218,9 @@ typedef struct context_s {
         .reed = 0,               \
         .Field_choice = 0,       \
         .Field_choice2 = 0,      \
-        .stat_screen_count = 0,  \
         .gpio12_screen_count = 0, \
         .stat_screen_cur = 0,    \
         .gpio12_screen_cur = 0,  \
-        .stat_screen = {0},      \
         .gpio12_screen = {0},    \
         .mac_address = {0},      \
         .io_button_status = {0}, \

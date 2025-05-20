@@ -22,6 +22,7 @@
 #include "context.h"
 #include "logger_config.h"
 #include "ubx.h"
+// #include "gps_user_cfg.h"
 
 //extern struct config_s * m_config;
 static const char *TAG = "context";
@@ -216,26 +217,13 @@ context_t *g_context_add_config(context_t *ctx, logger_config_t *config) {
         ctx->config = config;
     }
     uint16_t screen;                     // preserve value config
-    uint8_t screen_count, i, j;
-    
-    screen = config->screen.stat_screens;
-    if(screen>=UINT16_MAX) screen = UINT16_MAX;
-    for (i = 0, ctx->stat_screen_count=0; i<16; ++i) {
-            ctx->stat_screen[i] =  screen & (1 << i) ? 1 : 0;
-            if(ctx->stat_screen[i]) ctx->stat_screen_count++;
-    }
-#if (C_LOG_LEVEL < 2)
-    ESP_LOGW(TAG, "[%s], stat screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->stat_screen_count, config->screen.stat_screens);
-#endif
+    uint8_t i, j;
     screen = config->screen.gpio12_screens; 
     if(screen>=UINT8_MAX) screen = UINT8_MAX;
     for (i = 0,ctx->gpio12_screen_count=0; i<16; ++i) {
             ctx->gpio12_screen[i] =  screen & (1 << i) ? 1 : 0;
             if(ctx->gpio12_screen[i]) ctx->gpio12_screen_count++;
     }
-#if (C_LOG_LEVEL < 2)
-    ESP_LOGW(TAG, "[%s], io12 screens: count %"PRIu8", screens %"PRIu16, __FUNCTION__, ctx->gpio12_screen_count, config->screen.gpio12_screens);
-#endif
     ctx->config = config;
     return ctx;
 }
