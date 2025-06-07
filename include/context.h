@@ -10,7 +10,7 @@ extern "C" {
 #include "sdkconfig.h"
 
 #include <sys/time.h>
-#ifndef CONFIG_GPS_DATA_ENABLED
+#if defined(CONFIG_GPS_LOG_ENABLED)
 #include "gps_data.h"
 #endif
 
@@ -195,7 +195,7 @@ typedef struct context_s {
     struct gps_context_s gps;
 #else
     void gps;
-#define CONTEXT_GPS_DEFAULT_CONFIG {0}
+#define CONTEXT_GPS_DEFAULT_CONFIG() {0}
 #endif
     uint8_t firmware_update_started;
     uint32_t fw_update_postponed;
@@ -203,7 +203,7 @@ typedef struct context_s {
     uint8_t nvs_initialized;
 } context_t;
 
-#define CONTEXT_DEFAULT_CONFIG() (context_t){ \
+#define CONTEXT_DEFAULT_CONFIG() { \
         .sdTrouble = false,      \
         .sdOK = false,           \
         .NTP_time_set = false,   \
@@ -231,7 +231,7 @@ typedef struct context_s {
         .config_file_path = {0}, \
         .config = NULL,          \
         .rtc = NULL,             \
-        .gps = CONTEXT_GPS_DEFAULT_CONFIG, \
+        .gps = CONTEXT_GPS_DEFAULT_CONFIG(), \
         .fw_update_postponed = 0, \
         .fw_update_is_allowed = 0, \
         .firmware_update_started = 0, \
