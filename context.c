@@ -123,7 +123,7 @@ int init_rtc() {
 
 void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
     LOG_INFO(TAG, "[%s]", __FUNCTION__);
-    assert(rtc && config);
+    if(!rtc || !config) return;
     rtc->RTC_Board_Logo = config->screen.board_logo;  // copy RTC memory !!
     rtc->RTC_Sail_Logo = config->screen.sail_logo;    // copy to RTC memory !!
 #ifdef USE_CUSTOM_CALIBRATION_VAL
@@ -166,7 +166,7 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
 // }
 
 context_t *g_context_init(context_t *ctx) {
-    assert(ctx);
+    if(!ctx) return NULL;
     memset(ctx, 0, sizeof(struct context_s));
     context_t ctxx = CONTEXT_DEFAULT_CONFIG();
     memcpy(ctx, &ctxx, sizeof(struct context_s));
@@ -174,7 +174,7 @@ context_t *g_context_init(context_t *ctx) {
 }
 
 context_t *g_context_defaults(context_t *ctx) {
-    assert(ctx);
+    if(!ctx) return NULL;
     if (ctx->context_initialized)
         return ctx;
     //g_context_init(ctx);
@@ -212,17 +212,9 @@ uint8_t lenHelper(unsigned x) {
 }
 
 context_t *g_context_add_config(context_t *ctx, logger_config_t *config) {
-    assert(ctx && config);
+    if(!ctx || !config) return NULL;
     if(!ctx->config) {
         ctx->config = config;
-    }
-    uint16_t screen;                     // preserve value config
-    uint8_t i, j;
-    screen = config->screen.gpio12_screens; 
-    if(screen>=UINT8_MAX) screen = UINT8_MAX;
-    for (i = 0,ctx->gpio12_screen_count=0; i<16; ++i) {
-            ctx->gpio12_screen[i] =  screen & (1 << i) ? 1 : 0;
-            if(ctx->gpio12_screen[i]) ctx->gpio12_screen_count++;
     }
     ctx->config = config;
     return ctx;
@@ -256,6 +248,6 @@ uint16_t semVerStr(char * str) {
 }
 
 enum ubx_hw_e g_context_get_ubx_hw(context_t *ctx) {
-    assert(ctx);
+    if(!ctx) return UBX_TYPE_M0;
     return ctx->gps.ubx_device->rtc_conf->hw_type;
 }
