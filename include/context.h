@@ -79,8 +79,8 @@ typedef struct context_rtc_s {
     float RTC_calibration_bat;  // was 1.75| bij ontwaken uit deepsleep
                                 // niet noodzakelijk config file lezen
 #endif
-    float RTC_voltage_bat;
-    // float _pad3;
+    float RTC_voltage_bat;      // Current battery voltage from ADC
+    // screen
 
     char RTC_Sleep_txt[32];
     int8_t RTC_screen_rotation;
