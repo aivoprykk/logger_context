@@ -80,6 +80,7 @@ typedef struct context_rtc_s {
                                 // niet noodzakelijk config file lezen
 #endif
     float RTC_voltage_bat;      // Current battery voltage from ADC
+    uint8_t bat_view;
     // screen
 
     char RTC_Sleep_txt[32];
@@ -152,8 +153,7 @@ typedef struct context_s {
 
     bool sdTrouble;
     bool sdOK;
-    bool NTP_time_set;
-
+    
     bool Shut_down_Save_session;
 
     bool ftpStatus;
@@ -206,7 +206,6 @@ typedef struct context_s {
 #define CONTEXT_DEFAULT_CONFIG() { \
         .sdTrouble = false,      \
         .sdOK = false,           \
-        .NTP_time_set = false,   \
         .Shut_down_Save_session = false, \
         .ftpStatus = false,      \
         .downloading_file = false, \

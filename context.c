@@ -98,7 +98,9 @@ int nvs_init() {
 }
 
 int init_rtc() {
-    LOG_INFO(TAG, "[%s]", __FUNCTION__);
+#if (C_LOG_LEVEL < 3)
+    ILOG(TAG, "[%s]", __FUNCTION__);
+#endif
     esp_err_t err = nvs_init();
     if (!err) {
         if(m_context_rtc.RTC_screen_rotation == -1) {
@@ -126,11 +128,10 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
     if(!rtc || !config) return;
     rtc->RTC_Board_Logo = config->screen.board_logo;  // copy RTC memory !!
     rtc->RTC_Sail_Logo = config->screen.sail_logo;    // copy to RTC memory !!
+    rtc->bat_view = config->screen.bat_view;
 #ifdef USE_CUSTOM_CALIBRATION_VAL
     rtc->RTC_calibration_bat = config->cal_bat <= 1.4 ? config->cal_bat : 1;
 #endif
-    // rtc->RTC_calibration_speed = config->gps.speed_unit == 1 ? 0.0036 : config->gps.speed_unit == 2 ? 0.00194384449 : 0.001;  // 1=m/s, 3.6=km/h, 1.94384449 = knots, speed is now in mm/s
-    // m_context.gps.calibration_speed = rtc->RTC_calibration_speed;
     // rtc->RTC_SLEEP_screen = config->sleep_off_screen % 10;
     // rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
