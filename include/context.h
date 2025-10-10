@@ -165,7 +165,6 @@ typedef struct context_s {
     bool logs_enabled;
 
     uint8_t button;
-    uint8_t reed;
     uint8_t Field_choice;
     uint8_t Field_choice2;
 
@@ -214,7 +213,6 @@ typedef struct context_s {
         .request_shutdown = false, \
         .logs_enabled = false,   \
         .button = 0,             \
-        .reed = 0,               \
         .Field_choice = 0,       \
         .Field_choice2 = 0,      \
         .stat_screen_cur = 0,    \
