@@ -37,8 +37,59 @@ extern "C" {
 #define PROJECT_VER QUOTE_CMD(VERSION_MAJOR)"."QUOTE_CMD(VERSION_MINOR)"."QUOTE_CMD(VERSION_PATCH)"."QUOTE_CMD(VERSION_TWEAK)
 #endif
 #endif
+
 #ifndef LOGGER_VERSION
 #define LOGGER_VERSION (VERSION_MAJOR * 1000 + VERSION_MINOR * 100 + VERSION_PATCH * 10 + VERSION_TWEAK)
+#endif
+
+#ifndef PROJECT_VER_NUM_PACKED
+#define PROJECT_VER_NUM_PACKED QUOTE_CMD(VERSION_MAJOR)QUOTE_CMD(VERSION_MINOR)QUOTE_CMD(VERSION_PATCH)QUOTE_CMD(VERSION_TWEAK)
+#endif
+
+#ifndef PROJECT_VER_PACKED
+#if defined(BUILD_MODE_DEV)
+#define PROJECT_VER_PACKED PROJECT_VER_NUM_PACKED".dev"
+#else
+#define PROJECT_VER_PACKED PROJECT_VER_NUM_PACKED
+#endif
+#endif
+
+#ifndef VER_STR_EXT
+#if defined(CONFIG_DISPLAY_DRIVER_ST7789)
+#define VER_STR_EXT "st7789"
+#else
+#if defined(CONFIG_HAS_BOARD_LILYGO_EPAPER_T5_16MB_FLASH)
+#if defined(CONFIG_SSD168X_PANEL_SSD1681)
+#define VER_STR_EXT "ssd1681-16m"
+#elif defined(CONFIG_SSD168X_SCREEN_GDEY0213B74)
+#define VER_STR_EXT "gdey0213b74-16m"
+#else
+#define VER_STR_EXT "16m"
+#endif
+#else
+#if defined(CONFIG_SSD168X_PANEL_SSD1681)
+#define VER_STR_EXT "ssd1681"
+#elif defined(CONFIG_SSD168X_SCREEN_GDEY0213B74)
+#define VER_STR_EXT "gdey0213b74"
+#endif
+#endif
+#endif
+#endif
+
+#ifndef PROJECT_VER_EXT
+#ifndef VER_STR_EXT
+#define PROJECT_VER_EXT PROJECT_VER
+#else
+#define PROJECT_VER_EXT PROJECT_VER"-"VER_STR_EXT
+#endif
+#endif
+
+#ifndef PROJECT_VER_PACKED_EXT
+#ifndef VER_STR_EXT
+#define PROJECT_VER_PACKED_EXT PROJECT_VER_PACKED
+#else
+#define PROJECT_VER_PACKED_EXT PROJECT_VER_PACKED"-"VER_STR_EXT
+#endif
 #endif
 
 struct logger_config_s;
@@ -46,15 +97,6 @@ struct ubx_config_s;
 
 typedef struct context_rtc_s {
     uint8_t version;
-
-    uint8_t RTC_Board_Logo;
-    uint8_t RTC_Sail_Logo;
-    // uint8_t RTC_SLEEP_screen;
-    // uint8_t RTC_OFF_screen;
-
-    uint8_t RTC_counter;
-
-    int16_t RTC_offset;
 
     struct tm rtc_tm;
 
@@ -74,15 +116,15 @@ typedef struct context_rtc_s {
     float RTC_R4_10s;
 
     float RTC_R5_10s;
-    // Simon
-#ifdef USE_CUSTOM_CALIBRATION_VAL
-    float RTC_calibration_bat;  // was 1.75| bij ontwaken uit deepsleep
-                                // niet noodzakelijk config file lezen
-#endif
     float RTC_voltage_bat;      // Current battery voltage from ADC
-    uint8_t bat_view;
-    // screen
 
+    /// values from config
+
+    uint8_t RTC_Board_Logo;
+    uint8_t RTC_Sail_Logo;
+
+    uint8_t bat_view;
+    
     char RTC_Sleep_txt[32];
     int8_t RTC_screen_rotation;
     int8_t RTC_screen_brightness;
@@ -114,10 +156,6 @@ typedef struct context_rtc_s {
 #define CONTEXT_RTC_DEFAULT_CONFIG() \
     (context_rtc_t) {                                 \
         .version = 1,                 \
-        .RTC_Board_Logo = 1,           \
-        .RTC_Sail_Logo = 1,            \
-        .RTC_counter = 0,              \
-        .RTC_offset = 0,               \
         .rtc_tm = {0},                \
         .RTC_distance = 0,             \
         .RTC_avg_10s = 0,              \
@@ -132,6 +170,8 @@ typedef struct context_rtc_s {
         .RTC_R4_10s = 0,               \
         .RTC_R5_10s = 0,               \
         .RTC_voltage_bat = 3.6,          \
+        .RTC_Board_Logo = 1,           \
+        .RTC_Sail_Logo = 1,            \
         .RTC_Sleep_txt = "Your ID",          \
         .RTC_screen_rotation = SCR_DEFAULT_ROTATION,      \
         .RTC_screen_brightness = SCR_DEFAULT_BRIGHTNESS, \
@@ -160,7 +200,7 @@ typedef struct context_s {
     bool downloading_file;
     bool context_initialized;
     
-    bool request_restart;
+    uint8_t request_restart;
     bool request_shutdown;
     bool logs_enabled;
 
@@ -185,7 +225,7 @@ typedef struct context_s {
 
     int low_bat_count;
 
-    char SW_version[16];
+    char SW_version[32];
 
     char config_file_path[32];
     struct logger_config_s *config;
@@ -209,7 +249,7 @@ typedef struct context_s {
         .ftpStatus = false,      \
         .downloading_file = false, \
         .context_initialized = false, \
-        .request_restart = false, \
+        .request_restart = 0, \
         .request_shutdown = false, \
         .logs_enabled = false,   \
         .button = 0,             \
@@ -247,7 +287,7 @@ uint8_t semVerMajor();
 uint8_t semVerMinor();
 uint8_t semVerPatch();
 uint8_t semVerBuild();
-uint16_t semVerStr(char *str);
+uint16_t semVerStr(char *str, bool packed);
 #ifdef __cplusplus
 }
 #endif

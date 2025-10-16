@@ -129,9 +129,6 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
     rtc->RTC_Board_Logo = config->screen.board_logo;  // copy RTC memory !!
     rtc->RTC_Sail_Logo = config->screen.sail_logo;    // copy to RTC memory !!
     rtc->bat_view = config->screen.bat_view;
-#ifdef USE_CUSTOM_CALIBRATION_VAL
-    rtc->RTC_calibration_bat = config->cal_bat <= 1.4 ? config->cal_bat : 1;
-#endif
     // rtc->RTC_SLEEP_screen = config->sleep_off_screen % 10;
     // rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
@@ -186,7 +183,7 @@ context_t *g_context_defaults(context_t *ctx) {
     ctx->gps.SW_version = &(ctx->SW_version[0]);
     ctx->gps.mac_address =  &(ctx->mac_address[0]);
     ctx->rtc = &m_context_rtc;
-    semVerStr(ctx->SW_version);
+    semVerStr(ctx->SW_version, false);
     ctx->context_initialized = 1;
     return ctx;
 }
@@ -237,15 +234,15 @@ uint8_t semVerBuild() {
     return (uint8_t) VERSION_TWEAK;
 }
 
-const char gps_logger_version[] = PROJECT_VER;
+static const char gps_logger_version[] = PROJECT_VER;
+static const char gps_logger_version_packed[] = PROJECT_VER_PACKED;
 
-uint16_t semVerStr(char * str) {
-    uint16_t size = sizeof(gps_logger_version);
-    if(str) {
-        memcpy(str, gps_logger_version, size);
-        str[size]=0;
-    }
-    return (uint16_t) LOGGER_VERSION;
+uint16_t semVerStr(char * str, bool packed) {
+    if(!str) return UINT16_MAX;
+    uint16_t size = sizeof(packed ? gps_logger_version_packed : gps_logger_version)-1, initial_size = size;
+    memcpy(str, packed ? gps_logger_version_packed : gps_logger_version, size);
+    str[size]=0;
+    return (uint16_t)( size - initial_size );
 }
 
 enum ubx_hw_e g_context_get_ubx_hw(context_t *ctx) {
