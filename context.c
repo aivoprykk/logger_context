@@ -40,34 +40,32 @@ context_t m_context = CONTEXT_DEFAULT_CONFIG();
 static const char *nvs_namespace = "logger_ctx";
 
 static int read_rtc_i8(const char *ns, const char *name, void *value) {
-    LOG_INFO(TAG, "[%s] name: %s", __FUNCTION__, name ? name : "-");
+    ILOG(TAG, "[%s] name: %s", __FUNCTION__, name ? name : "-");
     if(!name) return -1;
     nvs_handle_t my_handle;
     int err = nvs_open(ns, NVS_READONLY, &my_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        ELOG(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
         err = 1024;
     }
     if (err != 1024){
         err = nvs_get_i8(my_handle, name, (int8_t*)value);
         nvs_close(my_handle);
-#if (C_LOG_LEVEL < 2) 
-        LOG_INFO(TAG, "[%s] get %s %d", __FUNCTION__, name, *(int8_t*)value);
-#endif
+        DLOG(TAG, "[%s] get %s %d", __FUNCTION__, name, *(int8_t*)value);
     }
     return err;
 }
 
 static int write_rtc_i8(const char *ns, const char *name, void *value, size_t len) {
-    LOG_INFO(TAG, "[%s] name: %s", __FUNCTION__, name ? name : "-");
+    ILOG(TAG, "[%s] name: %s", __FUNCTION__, name ? name : "-");
     if(!name) return -1;
     nvs_handle_t my_handle;
     int err = nvs_open(ns, NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        ELOG(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } else {
-#if (C_LOG_LEVEL < 2)
-        LOG_INFO(TAG, "[%s] set %s %d", __FUNCTION__, name, *(int8_t*)value);
+#if (C_LOG_LEVEL == LOG_TRACE_NUM)
+        ILOG(TAG, "[%s] set %s %d", __FUNCTION__, name, *(int8_t*)value);
 #endif
         err = nvs_set_i8(my_handle, name, *(int8_t*)value);
         err = nvs_commit(my_handle);
@@ -77,30 +75,28 @@ static int write_rtc_i8(const char *ns, const char *name, void *value, size_t le
 }
 
 int nvs_init() {
-    LOG_INFO(TAG, "[%s]", __FUNCTION__);
+    ILOG(TAG, "[%s]", __FUNCTION__);
     if(m_context.nvs_initialized) return ESP_OK;
     int ret = ESP_OK;
         ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ret = nvs_flash_erase();
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "esp_flash_erase failed: %s", esp_err_to_name(ret));
+            ELOG(TAG, "esp_flash_erase failed: %s", esp_err_to_name(ret));
         }
         ret = nvs_flash_init();
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "esp_flash_init failed: %s", esp_err_to_name(ret));
+            ELOG(TAG, "esp_flash_init failed: %s", esp_err_to_name(ret));
         }
         m_context.nvs_initialized = true;
     } else if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_flash_init failed: %s", esp_err_to_name(ret));
+        ELOG(TAG, "esp_flash_init failed: %s", esp_err_to_name(ret));
     }
     return ret;
 }
 
 int init_rtc() {
-#if (C_LOG_LEVEL < 3)
-    ILOG(TAG, "[%s]", __FUNCTION__);
-#endif
+    FUNC_ENTRY(TAG);
     esp_err_t err = nvs_init();
     if (!err) {
         if(m_context_rtc.RTC_screen_rotation == -1) {
@@ -124,7 +120,7 @@ int init_rtc() {
 }
 
 void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
-    LOG_INFO(TAG, "[%s]", __FUNCTION__);
+    FUNC_ENTRY(TAG);
     if(!rtc || !config) return;
     rtc->RTC_Board_Logo = config->screen.board_logo;  // copy RTC memory !!
     rtc->RTC_Sail_Logo = config->screen.sail_logo;    // copy to RTC memory !!
@@ -133,17 +129,13 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
     // rtc->RTC_OFF_screen = config->sleep_off_screen / 10 % 10;
     strcpy(rtc->RTC_Sleep_txt, config->sleep_info);
     if(config->screen.screen_rotation != rtc->RTC_screen_rotation){
-#if (C_LOG_LEVEL < 2)
-        LOG_INFO(TAG, "[%s] screen rotation change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_rotation, config->screen.screen_rotation);
-#endif
+        DLOG(TAG, "[%s] screen rotation change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_rotation, config->screen.screen_rotation);
         rtc->RTC_screen_rotation = config->screen.screen_rotation;
         write_rtc_i8(nvs_namespace, &(config_items[cfg_screen_rotation][0]), &rtc->RTC_screen_rotation, sizeof(rtc->RTC_screen_rotation));
     }
 #if !defined(CONFIG_LCD_IS_EPD)
     if(config->screen_brightness != rtc->RTC_screen_brightness){
-    #if (C_LOG_LEVEL < 2)
-        LOG_INFO(TAG, "[%s] screen brightness change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_brightness, config->screen_brightness);
-#endif
+        DLOG(TAG, "[%s] screen brightness change (rtc) %d to (conf) %d", __FUNCTION__, rtc->RTC_screen_brightness, config->screen_brightness);
         rtc->RTC_screen_brightness = config->screen_brightness;
         write_rtc_i8(nvs_namespace, &(config_items[cfg_screen_brightness][0]), &rtc->RTC_screen_brightness, sizeof(rtc->RTC_screen_brightness));
     }
@@ -151,7 +143,7 @@ void g_context_rtc_add_config(context_rtc_t *rtc, logger_config_t *config) {
 }
 
 // void g_context_ubx_add_config(context_t *ctx, ubx_config_t *config) {
-//     LOG_INFO(TAG, "[%s]", __FUNCTION__);
+//     ILOG(TAG, "[%s]", __FUNCTION__);
 //     assert(ctx);
 //     if(!ctx->gps.ubx_device)
 //         ctx->gps.ubx_device = config;
@@ -178,7 +170,7 @@ context_t *g_context_defaults(context_t *ctx) {
     //g_context_init(ctx);
     esp_err_t err = esp_efuse_mac_get_default(&(ctx->mac_address[0]));
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Get base MAC address from BLK3 of EFUSE error (%s)", esp_err_to_name(err));
+        ELOG(TAG, "Get base MAC address from BLK3 of EFUSE error (%s)", esp_err_to_name(err));
     }
     ctx->gps.SW_version = &(ctx->SW_version[0]);
     ctx->gps.mac_address =  &(ctx->mac_address[0]);

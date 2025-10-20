@@ -116,7 +116,7 @@ typedef struct context_rtc_s {
     float RTC_R4_10s;
 
     float RTC_R5_10s;
-    float RTC_voltage_bat;      // Current battery voltage from ADC
+    // float RTC_voltage_bat;      // Current battery voltage from ADC
 
     /// values from config
 
@@ -169,9 +169,9 @@ typedef struct context_rtc_s {
         .RTC_R3_10s = 0,               \
         .RTC_R4_10s = 0,               \
         .RTC_R5_10s = 0,               \
-        .RTC_voltage_bat = 3.6,          \
         .RTC_Board_Logo = 1,           \
         .RTC_Sail_Logo = 1,            \
+        .bat_view = bat_view_bat_perc, \
         .RTC_Sleep_txt = "Your ID",          \
         .RTC_screen_rotation = SCR_DEFAULT_ROTATION,      \
         .RTC_screen_brightness = SCR_DEFAULT_BRIGHTNESS, \
