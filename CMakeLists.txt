@@ -4,8 +4,8 @@ SET(INCS include)
 idf_component_register(
     SRCS ${SRCS}
     INCLUDE_DIRS ${INCS}
-    REQUIRES logger_common
-    PRIV_REQUIRES logger_config nvs_flash
+    REQUIRES logger_common logger_config
+    PRIV_REQUIRES nvs_flash
 )
 
 if(CONFIG_GPS_LOG_ENABLED)

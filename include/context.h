@@ -13,6 +13,7 @@ extern "C" {
 #if defined(CONFIG_GPS_LOG_ENABLED)
 #include "gps_data.h"
 #endif
+// #include "config_groups.h"
 
 #if !defined(VERSION_MAJOR)
 #define VERSION_MAJOR 1
@@ -93,96 +94,7 @@ extern "C" {
 #endif
 
 struct logger_config_s;
-struct ubx_config_s;
-
-typedef struct context_rtc_s {
-    uint8_t version;
-
-    struct tm rtc_tm;
-
-    float RTC_distance;
-    float RTC_avg_10s;
-    float RTC_max_2s;
-
-    // Simon
-    float RTC_alp;
-    float RTC_500m;
-    float RTC_1h;
-    float RTC_mile;
-
-    float RTC_R1_10s;
-    float RTC_R2_10s;
-    float RTC_R3_10s;
-    float RTC_R4_10s;
-
-    float RTC_R5_10s;
-    // float RTC_voltage_bat;      // Current battery voltage from ADC
-
-    /// values from config
-
-    uint8_t RTC_Board_Logo;
-    uint8_t RTC_Sail_Logo;
-
-    uint8_t bat_view;
-    
-    char RTC_Sleep_txt[32];
-    int8_t RTC_screen_rotation;
-    int8_t RTC_screen_brightness;
-    uint8_t RTC_screen_auto_refresh;
-} context_rtc_t;
-
-#if !defined(CONFIG_LCD_IS_EPD)
-#if !defined(SCR_DEFAULT_ROTATION)
-#define SCR_DEFAULT_ROTATION 2 // 270deg
-#endif
-#if !defined(SCR_AUTO_REFRESH)
-#define SCR_AUTO_REFRESH 1
-#endif
-#if !defined(SCR_DEFAULT_BRIGHTNESS)
-#define SCR_DEFAULT_BRIGHTNESS 100
-#endif
-#else
-#if !defined(SCR_DEFAULT_ROTATION)
-#define SCR_DEFAULT_ROTATION 1 // 90deg
-#endif
-#if !defined(SCR_AUTO_REFRESH)
-#define SCR_AUTO_REFRESH 0
-#endif
-#if !defined(SCR_DEFAULT_BRIGHTNESS)
-#define SCR_DEFAULT_BRIGHTNESS 0
-#endif
-#endif
-
-#define CONTEXT_RTC_DEFAULT_CONFIG() \
-    (context_rtc_t) {                                 \
-        .version = 1,                 \
-        .rtc_tm = {0},                \
-        .RTC_distance = 0,             \
-        .RTC_avg_10s = 0,              \
-        .RTC_max_2s = 0,               \
-        .RTC_alp = 0,                  \
-        .RTC_500m = 0,                 \
-        .RTC_1h = 0,                   \
-        .RTC_mile = 0,                 \
-        .RTC_R1_10s = 0,               \
-        .RTC_R2_10s = 0,               \
-        .RTC_R3_10s = 0,               \
-        .RTC_R4_10s = 0,               \
-        .RTC_R5_10s = 0,               \
-        .RTC_Board_Logo = 1,           \
-        .RTC_Sail_Logo = 1,            \
-        .bat_view = bat_view_bat_perc, \
-        .RTC_Sleep_txt = "Your ID",          \
-        .RTC_screen_rotation = SCR_DEFAULT_ROTATION,      \
-        .RTC_screen_brightness = SCR_DEFAULT_BRIGHTNESS, \
-        .RTC_screen_auto_refresh = SCR_AUTO_REFRESH, \
-    }
-
-context_rtc_t *g_context_rtc_init(context_rtc_t *rtc);
-context_rtc_t *g_context_rtc_defaults(context_rtc_t *rtc);
-void g_context_rtc_add_config(context_rtc_t *rtc, struct logger_config_s *config);
-int nvs_init();
-int init_rtc();
+struct ubx_ctx_s;
 
 typedef enum {
     IO_BUT_12_STATUS=0,
@@ -191,19 +103,16 @@ typedef enum {
 
 typedef struct context_s {
 
-    bool sdTrouble;
-    bool sdOK;
+    // bool sdOK;
     
     bool Shut_down_Save_session;
 
-    bool ftpStatus;
     bool downloading_file;
     bool context_initialized;
     
     uint8_t request_restart;
     bool request_shutdown;
-    bool logs_enabled;
-
+    
     uint8_t button;
     uint8_t Field_choice;
     uint8_t Field_choice2;
@@ -227,9 +136,8 @@ typedef struct context_s {
 
     char SW_version[32];
 
-    char config_file_path[32];
-    struct logger_config_s *config;
-    struct context_rtc_s *rtc;
+    // REMOVED: struct logger_config_s *config; - Use g_rtc_config instead
+    // struct context_rtc_s *rtc;
 #ifdef CONFIG_GPS_LOG_ENABLED
     struct gps_context_s gps;
 #else
@@ -239,22 +147,14 @@ typedef struct context_s {
     uint8_t firmware_update_started;
     uint32_t fw_update_postponed;
     uint8_t fw_update_is_allowed;
-    uint8_t nvs_initialized;
 } context_t;
 
 #define CONTEXT_DEFAULT_CONFIG() { \
-        .sdTrouble = false,      \
-        .sdOK = false,           \
         .Shut_down_Save_session = false, \
-        .ftpStatus = false,      \
         .downloading_file = false, \
         .context_initialized = false, \
         .request_restart = 0, \
         .request_shutdown = false, \
-        .logs_enabled = false,   \
-        .button = 0,             \
-        .Field_choice = 0,       \
-        .Field_choice2 = 0,      \
         .stat_screen_cur = 0,    \
         CONFIG_GPIO12_SCR_N  \
         .mac_address = {0},      \
@@ -263,19 +163,14 @@ typedef struct context_s {
         .wifi_ap_timeout = 0,    \
         .low_bat_count = 0,      \
         .SW_version = PROJECT_VER,   \
-        .config_file_path = {0}, \
-        .config = NULL,          \
-        .rtc = NULL,             \
         .gps = CONTEXT_GPS_DEFAULT_CONFIG(), \
         .fw_update_postponed = 0, \
         .fw_update_is_allowed = 0, \
         .firmware_update_started = 0, \
-        .nvs_initialized = 0,    \
     }
 
 context_t *g_context_init(context_t *ctx);
 context_t *g_context_defaults(context_t *ctx);
-context_t *g_context_add_config(context_t *ctx, struct logger_config_s *);
 
 enum ubx_hw_e;
 enum ubx_hw_e g_context_get_ubx_hw(context_t *ctx);
