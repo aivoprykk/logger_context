@@ -8,7 +8,6 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
-
 #include <sys/time.h>
 #if defined(CONFIG_GPS_LOG_ENABLED)
 #include "gps_data.h"
@@ -101,17 +100,32 @@ typedef enum {
     IO_BUT_39_STATUS=1
 } io_but_status_t;
 
+#define APP_MODE_LIST(l) \
+l(UNKNOWN) \
+l(BOOT) \
+l(WIFI) \
+l(GPS) \
+l(SLEEP) \
+l(CHARGE) \
+l(SHUT_DOWN) \
+l(RESTART)
+
+#define APP_MODE_ENUM(x) APP_MODE_ ## x,
+typedef enum app_mode_s {
+    APP_MODE_LIST(APP_MODE_ENUM)
+} app_mode_t;
+
 typedef struct context_s {
 
     // bool sdOK;
     
-    bool Shut_down_Save_session;
-
+    
     bool downloading_file;
     bool context_initialized;
     
-    uint8_t request_restart;
-    bool request_shutdown;
+    // uint8_t request_restart;
+    // bool request_shutdown;
+    app_mode_t request_app_mode;
     
     uint8_t button;
     uint8_t Field_choice;
@@ -132,8 +146,6 @@ typedef struct context_s {
     uint32_t last_delay;       // 4bytes
     uint64_t wifi_ap_timeout;  // 8bytes
 
-    int low_bat_count;
-
     char SW_version[32];
 
     // REMOVED: struct logger_config_s *config; - Use g_rtc_config instead
@@ -150,18 +162,15 @@ typedef struct context_s {
 } context_t;
 
 #define CONTEXT_DEFAULT_CONFIG() { \
-        .Shut_down_Save_session = false, \
         .downloading_file = false, \
         .context_initialized = false, \
-        .request_restart = 0, \
-        .request_shutdown = false, \
+        .request_app_mode = APP_MODE_UNKNOWN, \
         .stat_screen_cur = 0,    \
         CONFIG_GPIO12_SCR_N  \
         .mac_address = {0},      \
         .io_button_status = {0}, \
         .last_delay = 0,         \
         .wifi_ap_timeout = 0,    \
-        .low_bat_count = 0,      \
         .SW_version = PROJECT_VER,   \
         .gps = CONTEXT_GPS_DEFAULT_CONFIG(), \
         .fw_update_postponed = 0, \
