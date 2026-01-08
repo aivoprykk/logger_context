@@ -132,7 +132,7 @@ typedef struct context_s {
     uint8_t Field_choice2;
 
     uint8_t stat_screen_cur;    // keuze stat scherm indien stilstand
-#if defined(CONFIG_LOGGER_BUTTON_GPIO_1)    
+#if defined(CONFIG_LOGGER_BUTTON_GPIO_1)  || defined(CONFIG_UBUTTON_GPIO_1)
     uint8_t gpio12_screen_cur;  // keuze welk scherm
 #define CONFIG_GPIO12_SCR_N .gpio12_screen_cur = 0,
 #else
