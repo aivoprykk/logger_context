@@ -95,11 +95,6 @@ extern "C" {
 struct logger_config_s;
 struct ubx_ctx_s;
 
-typedef enum {
-    IO_BUT_12_STATUS=0,
-    IO_BUT_39_STATUS=1
-} io_but_status_t;
-
 #define APP_MODE_LIST(l) \
 l(UNKNOWN) \
 l(BOOT) \
@@ -118,31 +113,30 @@ typedef enum app_mode_s {
 typedef struct context_s {
 
     // bool sdOK;
-    
-    
+
+
     bool downloading_file;
     bool context_initialized;
-    
+
     // uint8_t request_restart;
     // bool request_shutdown;
     app_mode_t request_app_mode;
-    
+
     uint8_t button;
     uint8_t Field_choice;
     uint8_t Field_choice2;
 
-    uint8_t stat_screen_cur;    // keuze stat scherm indien stilstand
+    uint8_t stat_screen_cur;
 #if defined(CONFIG_LOGGER_BUTTON_GPIO_1)  || defined(CONFIG_UBUTTON_GPIO_1)
-    uint8_t gpio12_screen_cur;  // keuze welk scherm
+    uint8_t gpio12_screen_cur;
 #define CONFIG_GPIO12_SCR_N .gpio12_screen_cur = 0,
 #else
 #define CONFIG_GPIO12_SCR_N
 #endif
     uint8_t _pad1;
-    
-    uint8_t mac_address[6];     // unique mac adress of esp32
-    io_but_status_t io_button_status[4];
 
+    uint8_t mac_address[6];     // unique mac adress of esp32
+    
     uint32_t last_delay;       // 4bytes
     uint64_t wifi_ap_timeout;  // 8bytes
 
@@ -168,7 +162,6 @@ typedef struct context_s {
         .stat_screen_cur = 0,    \
         CONFIG_GPIO12_SCR_N  \
         .mac_address = {0},      \
-        .io_button_status = {0}, \
         .last_delay = 0,         \
         .wifi_ap_timeout = 0,    \
         .SW_version = PROJECT_VER,   \
