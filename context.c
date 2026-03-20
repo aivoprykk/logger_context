@@ -72,13 +72,10 @@ static const char gps_logger_version_packed[] = PROJECT_VER_PACKED;
 uint16_t semVerStr(char *str, bool packed) {
 	if (!str)
 		return UINT16_MAX;
-	uint16_t size = sizeof(packed ? gps_logger_version_packed
-								  : gps_logger_version) -
-					1,
-			 initial_size = size;
-	memcpy(str, packed ? gps_logger_version_packed : gps_logger_version, size);
-	str[size] = 0;
-	return (uint16_t)(size - initial_size);
+	const char *version = packed ? gps_logger_version_packed : gps_logger_version;
+	size_t size = strlen(version);
+	memcpy(str, version, size + 1);
+	return (uint16_t)size;
 }
 
 enum ubx_hw_e g_context_get_ubx_hw(context_t *ctx) {
